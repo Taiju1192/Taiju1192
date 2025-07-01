@@ -1,4 +1,3 @@
-// commands/lyrics.js
 const https = require('https');
 const {
   SlashCommandBuilder,
@@ -15,24 +14,32 @@ const getLyricsFromOVH = (artist, title) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        const json = JSON.parse(data);
-        if (json.lyrics) resolve(json.lyrics);
-        else reject('lyrics.ovh: 歌詞が見つかりませんでした。');
+        try {
+          const json = JSON.parse(data);
+          if (json.lyrics) resolve(json.lyrics);
+          else reject('lyrics.ovh: 歌詞が見つかりませんでした。');
+        } catch (err) {
+          reject('lyrics.ovh: 不正なレスポンス。');
+        }
       });
     }).on('error', reject);
   });
 };
 
-const getLyricsFromSomeRandomAPI = (artist, title) => {
+const getLyricsFromSomeRandomAPI = (query) => {
   return new Promise((resolve, reject) => {
-    const url = `https://some-random-api.ml/lyrics?title=${encodeURIComponent(artist + ' ' + title)}`;
+    const url = `https://some-random-api.ml/lyrics?title=${encodeURIComponent(query)}`;
     https.get(url, res => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        const json = JSON.parse(data);
-        if (json.lyrics) resolve(json.lyrics);
-        else reject('some-random-api: 歌詞が見つかりませんでした。');
+        try {
+          const json = JSON.parse(data);
+          if (json.lyrics) resolve({ lyrics: json.lyrics, title: json.title, author: json.author });
+          else reject('some-random-api: 歌詞が見つかりませんでした。');
+        } catch (err) {
+          reject('some-random-api: 不正なレスポンス。');
+        }
       });
     }).on('error', reject);
   });
@@ -41,33 +48,48 @@ const getLyricsFromSomeRandomAPI = (artist, title) => {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('lyrics')
-    .setDescription('アーティスト名と曲名から歌詞を表示します')
+    .setDescription('曲名または「アーティスト - 曲名」から歌詞を表示します')
     .addStringOption(option =>
       option.setName('query')
-        .setDescription('アーティスト - 曲名 形式で入力')
+        .setDescription('例: Aimer - Brave Shine または Brave Shine')
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    const query = interaction.options.getString('query');
-    const [artist, ...titleParts] = query.split('-');
-    const title = titleParts.join('-').trim();
+    await interaction.deferReply(); // タイムアウト防止！
 
-    if (!artist || !title) {
-      return await interaction.reply({
-        content: '❌ アーティスト - 曲名 の形式で入力してください。',
-        flags: 1 << 6
-      });
+    const query = interaction.options.getString('query');
+    let artist = null;
+    let title = null;
+
+    if (query.includes('-')) {
+      const [rawArtist, ...titleParts] = query.split('-');
+      artist = rawArtist.trim();
+      title = titleParts.join('-').trim();
+    } else {
+      title = query.trim();
     }
 
     let lyrics = null;
+    let finalTitle = title;
+    let finalArtist = artist;
+
     try {
-      lyrics = await getLyricsFromOVH(artist.trim(), title);
+      if (artist && title) {
+        lyrics = await getLyricsFromOVH(artist, title);
+      } else {
+        throw new Error('OVHスキップ：アーティスト情報不足');
+      }
     } catch (err1) {
+      console.warn('OVH失敗:', err1);
       try {
-        lyrics = await getLyricsFromSomeRandomAPI(artist.trim(), title);
+        const result = await getLyricsFromSomeRandomAPI(query);
+        lyrics = result.lyrics;
+        finalTitle = result.title;
+        finalArtist = result.author;
       } catch (err2) {
-        return await interaction.reply({ content: '❌ 歌詞を取得できませんでした。', flags: 1 << 6 });
+        console.error('SomeRandomAPI失敗:', err2);
+        return await interaction.editReply({ content: '❌ 歌詞を取得できませんでした。' });
       }
     }
 
@@ -78,27 +100,49 @@ module.exports = {
       return {
         embeds: [
           new EmbedBuilder()
-            .setTitle(`${title}`)
+            .setTitle(finalTitle || 'タイトル不明')
+            .setAuthor({ name: finalArtist || 'アーティスト不明' })
             .setDescription(chunks[index])
             .setColor(0x1DB954)
             .setFooter({ text: `ページ ${index + 1} / ${chunks.length}` })
         ],
         components: [
           new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('prev').setLabel('⬅').setStyle(ButtonStyle.Secondary).setDisabled(index === 0),
-            new ButtonBuilder().setCustomId('next').setLabel('➡').setStyle(ButtonStyle.Secondary).setDisabled(index === chunks.length - 1)
+            new ButtonBuilder()
+              .setCustomId('prev')
+              .setLabel('⬅')
+              .setStyle(ButtonStyle.Secondary)
+              .setDisabled(index === 0),
+            new ButtonBuilder()
+              .setCustomId('next')
+              .setLabel('➡')
+              .setStyle(ButtonStyle.Secondary)
+              .setDisabled(index === chunks.length - 1)
           )
         ]
       };
     };
 
-    const msg = await interaction.reply({ ...getMessage(page), fetchReply: true });
+    const msg = await interaction.editReply({ ...getMessage(page), fetchReply: true });
 
-    const collector = msg.createMessageComponentCollector({ time: 60000 });
+    const collector = msg.createMessageComponentCollector({ time: 300000 }); // 5分
     collector.on('collect', async i => {
+      if (i.user.id !== interaction.user.id) {
+        return await i.reply({ content: 'このボタンはあなた専用です。', ephemeral: true });
+      }
+
       if (i.customId === 'prev') page--;
       else if (i.customId === 'next') page++;
+
       await i.update(getMessage(page));
+    });
+
+    collector.on('end', async () => {
+      try {
+        await msg.edit({ components: [] });
+      } catch (e) {
+        console.error('ボタン削除失敗:', e);
+      }
     });
   }
 };
