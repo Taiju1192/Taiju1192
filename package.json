@@ -16,6 +16,6 @@
     "opusscript": "^0.0.8"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   }
 }
