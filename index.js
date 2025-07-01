@@ -34,4 +34,18 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
+// Webサーバー（UptimeRobot監視用）
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
+});
+
+// Render用：PORT環境変数を使用
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Web server is listening on port ${PORT}`);
+});
+
 client.login(process.env.DISCORD_TOKEN);
