@@ -1,58 +1,48 @@
-// index.js（自動でコマンド登録も含めるバージョン）
+require("dotenv").config();
+const { Client, GatewayIntentBits, Partials, Events, Collection } = require("discord.js");
+const fs = require("fs");
 
-import { Client, Collection, GatewayIntentBits, REST, Routes } from 'discord.js';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import express from 'express';
-
-dotenv.config();
-
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-client.commands = new Collection();
-
-// コマンド読み込みと登録処理
-const commands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-  const command = await import(`./commands/${file}`);
-  client.commands.set(command.default.data.name, command.default);
-  commands.push(command.default.data.toJSON());
-}
-
-// スラッシュコマンド登録（起動時に1回）
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-(async () => {
-  try {
-    console.log('🔁 Registering slash commands...');
-
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-      { body: commands }
-    );
-
-    console.log('✅ Successfully registered commands.');
-  } catch (error) {
-    console.error('❌ Failed to register commands:', error);
-  }
-})();
-
-client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}`);
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Channel]
 });
 
-client.on('interactionCreate', async interaction => {
+client.commands = new Collection();
+const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  client.commands.set(command.data.name, command);
+}
+
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Botログイン成功: ${client.user.tag}`);
+});
+
+client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(error);
-    await interaction.reply({ content: 'エラーが発生しました', ephemeral: true });
+    console.error("コマンド実行エラー:", error);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ content: "コマンドの実行中にエラーが発生しました。", ephemeral: true });
+    } else {
+      await interaction.reply({ content: "コマンドの実行中にエラーが発生しました。", ephemeral: true });
+    }
   }
 });
+
+client.login(process.env.DISCORD_TOKEN);
+
 
 // Render用の監視ルート
 const app = express();
@@ -62,5 +52,5 @@ app.listen(PORT, () => {
   console.log(`Web server is listening on port ${PORT}`);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+
 
