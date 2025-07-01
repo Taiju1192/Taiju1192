@@ -78,11 +78,15 @@ async function playNext(guildId, firstTrack = null) {
   const playerData = activePlayers.get(guildId);
   if (!playerData) return;
 
+  if (firstTrack && (!firstTrack.src || typeof firstTrack.src !== "string")) {
+    console.error("❌ firstTrack が無効です。スキップします。", firstTrack);
+    firstTrack = null;
+  }
+
   if (firstTrack) {
     playerData.queue.unshift(firstTrack);
   }
 
-  // tracks配列が空なら終了
   if (tracks.length === 0) {
     console.error("⚠️ tracks 配列が空です！");
     await playerData.interaction.followUp("⚠️ 再生可能な曲が登録されていません。");
@@ -91,17 +95,17 @@ async function playNext(guildId, firstTrack = null) {
     return;
   }
 
-  // キューが空ならランダム追加
   if (playerData.queue.length === 0) {
     const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-    playerData.queue.push(randomTrack);
+    if (randomTrack && randomTrack.src) {
+      playerData.queue.push(randomTrack);
+    }
   }
 
   const nextTrack = playerData.queue.shift();
 
-  // nextTrackまたはsrcが不正な場合
   if (!nextTrack || !nextTrack.src) {
-    console.error("❌ nextTrack が不正です。スキップまたは終了処理を行います。");
+    console.error("❌ nextTrack が不正です。スキップまたは終了処理を行います。", nextTrack);
     await playerData.interaction.followUp("⚠️ 次の曲が見つかりませんでした。");
     playerData.connection.destroy();
     activePlayers.delete(guildId);
@@ -111,10 +115,10 @@ async function playNext(guildId, firstTrack = null) {
   playerData.currentTrack = nextTrack;
 
   try {
+    console.log("🎧 再生対象:", nextTrack.title, nextTrack.src); // デバッグ用
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
     playerData.player.play(resource);
     playerData.currentAudioPath = audioPath;
-
     await playerData.interaction.followUp(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
@@ -123,6 +127,7 @@ async function playNext(guildId, firstTrack = null) {
     activePlayers.delete(guildId);
   }
 }
+
 
 module.exports = {
   data: new SlashCommandBuilder()
