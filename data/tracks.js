@@ -335,5 +335,6 @@ const tracks = [
     title: "正解",
     src: "https://cdn.glitch.me/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/RADWIMPS%20-%20%E6%AD%A3%E8%A7%A3%20%5BOfficial%20Music%20Video%5D.mp4?v=1751186868572"
   },
+  
   // ...全曲分続けて追加...
 ];
