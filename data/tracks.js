@@ -327,14 +327,7 @@ const tracks = [
     title: "香水",
     src: "https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/%E9%A6%99%E6%B0%B4%20%20%EF%BC%8F%20%20%E7%91%9B%E4%BA%BA%20(Official%20Music%20Video).mp4?v=1750940926267"
   },
-  {
-    title: "クスシキ",
-    src: "https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/Mrs.%20GREEN%20APPLE%E3%80%8C%E3%82%AF%E3%82%B9%E3%82%B7%E3%82%AD%E3%80%8DOfficial%20Music%20Video.mp4?v=1751186862853"
-  },
-　{
-    title: "正解",
-    src: "https://cdn.glitch.me/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/RADWIMPS%20-%20%E6%AD%A3%E8%A7%A3%20%5BOfficial%20Music%20Video%5D.mp4?v=1751186868572"
-  },
-  
   // ...全曲分続けて追加...
 ];
+
+module.exports = tracks;
