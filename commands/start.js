@@ -78,47 +78,25 @@ async function playNext(guildId, firstTrack = null) {
   const playerData = activePlayers.get(guildId);
   if (!playerData) return;
 
-  if (firstTrack && (!firstTrack.src || typeof firstTrack.src !== "string")) {
-    console.error("❌ firstTrack が無効です。スキップします。", firstTrack);
-    firstTrack = null;
-  }
-
   if (firstTrack) {
     playerData.queue.unshift(firstTrack);
   }
 
-  if (tracks.length === 0) {
-    console.error("⚠️ tracks 配列が空です！");
-    await playerData.interaction.followUp("⚠️ 再生可能な曲が登録されていません。");
-    playerData.connection.destroy();
-    activePlayers.delete(guildId);
-    return;
-  }
-
   if (playerData.queue.length === 0) {
     const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-    if (randomTrack && randomTrack.src) {
-      playerData.queue.push(randomTrack);
-    }
+    playerData.queue.push(randomTrack);
   }
 
   const nextTrack = playerData.queue.shift();
-
-  if (!nextTrack || !nextTrack.src) {
-    console.error("❌ nextTrack が不正です。スキップまたは終了処理を行います。", nextTrack);
-    await playerData.interaction.followUp("⚠️ 次の曲が見つかりませんでした。");
-    playerData.connection.destroy();
-    activePlayers.delete(guildId);
-    return;
-  }
-
   playerData.currentTrack = nextTrack;
 
   try {
-    console.log("🎧 再生対象:", nextTrack.title, nextTrack.src); // デバッグ用
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
     playerData.player.play(resource);
+
+    // 一時ファイルは再生が終わったあと削除するため保存
     playerData.currentAudioPath = audioPath;
+
     await playerData.interaction.followUp(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
@@ -127,7 +105,6 @@ async function playNext(guildId, firstTrack = null) {
     activePlayers.delete(guildId);
   }
 }
-
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -158,6 +135,7 @@ module.exports = {
       if (query.startsWith("http")) {
         selectedTrack = { title: decodeURIComponent(query.split("/").pop()), src: query };
       } else {
+        // キーワードで曲検索
         const matchedTracks = findTracksByKeyword(query);
 
         if (matchedTracks.length === 0) {
@@ -165,8 +143,10 @@ module.exports = {
         } else if (matchedTracks.length === 1) {
           selectedTrack = matchedTracks[0];
         } else {
+          // 複数曲ヒットした場合は選択メニューで選ばせる
           const options = matchedTracks.slice(0, 25).map((track, i) => ({
             label: track.title.length > 100 ? track.title.slice(0, 97) + "..." : track.title,
+            // descriptionは省略
             value: String(i),
           }));
 
@@ -183,10 +163,12 @@ module.exports = {
 
           await interaction.editReply({ embeds: [embed], components: [row] });
 
+          // 選択イベント待機（最大60秒）
           const filter = i => i.customId === "selectTrack" && i.user.id === interaction.user.id;
 
           try {
             const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
+
             const index = parseInt(selectInteraction.values[0], 10);
             selectedTrack = matchedTracks[index];
 
@@ -198,10 +180,8 @@ module.exports = {
       }
     }
 
+    // キーワードなし または 選択済み
     if (!selectedTrack) {
-      if (tracks.length === 0) {
-        return interaction.editReply("⚠️ 登録されている曲がありません。");
-      }
       selectedTrack = tracks[Math.floor(Math.random() * tracks.length)];
     }
 
@@ -213,16 +193,18 @@ module.exports = {
 
     try {
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+
       const player = createAudioPlayer();
 
       player.on(AudioPlayerStatus.Idle, async () => {
         if (!activePlayers.has(guildId)) return;
 
-        const currentAudio = activePlayers.get(guildId).currentAudioPath;
-        if (currentAudio?.startsWith(os.tmpdir())) {
-          fs.unlink(currentAudio, e => { if (e) console.error(e); });
+        // 一時ファイル削除
+        if (activePlayers.get(guildId).currentAudioPath?.startsWith(os.tmpdir())) {
+          fs.unlink(activePlayers.get(guildId).currentAudioPath, e => { if (e) console.error(e); });
         }
 
+        // 次の曲を再生
         playNext(guildId);
       });
 
@@ -244,7 +226,9 @@ module.exports = {
         interaction,
       });
 
+      // 最初の一曲を再生
       await playNext(guildId, selectedTrack);
+
       await interaction.editReply("▶️ 再生を開始しました。");
     } catch (error) {
       console.error("❌ 再生失敗:", error);
@@ -254,3 +238,5 @@ module.exports = {
     }
   }
 };
+
+
