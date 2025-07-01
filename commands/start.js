@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require("discord.js");Add commentMore actions
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -84,27 +84,19 @@ async function playNext(guildId, firstTrack = null) {
 
   if (playerData.queue.length === 0) {
     const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-    if (!randomTrack) {
-      console.error("❌ 再生可能な曲がありません");
-      await playerData.interaction.followUp("⚠️ 再生可能な曲がありません。");
-      return;
-    }
     playerData.queue.push(randomTrack);
   }
 
   const nextTrack = playerData.queue.shift();
-  if (!nextTrack) {
-    console.error("❌ 次の曲が取得できません");
-    await playerData.interaction.followUp("⚠️ 次の曲が取得できません。");
-    return;
-  }
-
   playerData.currentTrack = nextTrack;
 
   try {
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
     playerData.player.play(resource);
+
+    // 一時ファイルは再生が終わったあと削除するため保存
     playerData.currentAudioPath = audioPath;
+
     await playerData.interaction.followUp(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
@@ -113,7 +105,6 @@ async function playNext(guildId, firstTrack = null) {
     activePlayers.delete(guildId);
   }
 }
-
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -247,5 +238,3 @@ module.exports = {
     }
   }
 };
-
-
