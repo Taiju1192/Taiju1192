@@ -1,4 +1,3 @@
-// index.js
 require("dotenv").config();
 const { 
   Client, 
@@ -12,6 +11,9 @@ const {
 const fs = require("fs");
 const express = require("express");
 
+// === activePlayersを読み込んで使えるようにする ===
+const activePlayers = require('./activePlayers'); // ← ここを追加！
+
 // client 初期化
 const client = new Client({
   intents: [
@@ -22,6 +24,9 @@ const client = new Client({
   ],
   partials: [Partials.Channel]
 });
+
+// activePlayers を client にアタッチ（どのコマンドでも使えるように）
+client.activePlayers = activePlayers;
 
 // コマンド読み込み
 client.commands = new Collection();
@@ -34,7 +39,7 @@ for (const file of commandFiles) {
   commands.push(command.data.toJSON());
 }
 
-// スラッシュコマンドを Discord に登録（起動時に1回）
+// スラッシュコマンド登録
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
@@ -50,12 +55,10 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
   }
 })();
 
-// Bot準備完了時のログ
 client.once(Events.ClientReady, () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 });
 
-// コマンドの処理
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -74,10 +77,9 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-// Botにログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// Renderなどのホスティング環境で「常に動作中」とするためのExpressルート
+// ホスティング用監視ルート
 const app = express();
 app.get('/', (req, res) => res.send('Bot is running!'));
 const PORT = process.env.PORT || 3000;
