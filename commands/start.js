@@ -93,8 +93,6 @@ async function playNext(guildId, firstTrack = null) {
   try {
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
     playerData.player.play(resource);
-
-    // 一時ファイルは再生が終わったあと削除するため保存
     playerData.currentAudioPath = audioPath;
 
     await playerData.interaction.followUp(`🎶 再生中: **${nextTrack.title}**`);
@@ -135,7 +133,6 @@ module.exports = {
       if (query.startsWith("http")) {
         selectedTrack = { title: decodeURIComponent(query.split("/").pop()), src: query };
       } else {
-        // キーワードで曲検索
         const matchedTracks = findTracksByKeyword(query);
 
         if (matchedTracks.length === 0) {
@@ -143,10 +140,8 @@ module.exports = {
         } else if (matchedTracks.length === 1) {
           selectedTrack = matchedTracks[0];
         } else {
-          // 複数曲ヒットした場合は選択メニューで選ばせる
           const options = matchedTracks.slice(0, 25).map((track, i) => ({
             label: track.title.length > 100 ? track.title.slice(0, 97) + "..." : track.title,
-            // descriptionは省略
             value: String(i),
           }));
 
@@ -163,7 +158,6 @@ module.exports = {
 
           await interaction.editReply({ embeds: [embed], components: [row] });
 
-          // 選択イベント待機（最大60秒）
           const filter = i => i.customId === "selectTrack" && i.user.id === interaction.user.id;
 
           try {
@@ -180,7 +174,6 @@ module.exports = {
       }
     }
 
-    // キーワードなし または 選択済み
     if (!selectedTrack) {
       selectedTrack = tracks[Math.floor(Math.random() * tracks.length)];
     }
@@ -199,12 +192,10 @@ module.exports = {
       player.on(AudioPlayerStatus.Idle, async () => {
         if (!activePlayers.has(guildId)) return;
 
-        // 一時ファイル削除
         if (activePlayers.get(guildId).currentAudioPath?.startsWith(os.tmpdir())) {
           fs.unlink(activePlayers.get(guildId).currentAudioPath, e => { if (e) console.error(e); });
         }
 
-        // 次の曲を再生
         playNext(guildId);
       });
 
@@ -226,10 +217,10 @@ module.exports = {
         interaction,
       });
 
-      // 最初の一曲を再生
       await playNext(guildId, selectedTrack);
 
-      await interaction.editReply("▶️ 再生を開始しました。");
+      // 修正済み：新しいメッセージとして送信
+      await interaction.followUp("▶️ 再生を開始しました。");
     } catch (error) {
       console.error("❌ 再生失敗:", error);
       await interaction.editReply("❌ 音楽の再生に失敗しました。");
