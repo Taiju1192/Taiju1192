@@ -6,10 +6,15 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("request")
     .setDescription("曲をリクエストします")
-    .addStringOption(opt => opt.setName("title").setDescription("曲名・詳細・リンクなど").setRequired(true)),
+    .addStringOption(opt =>
+      opt.setName("title").setDescription("曲名・詳細・リンクなど").setRequired(true)
+    ),
 
   async execute(interaction) {
     const title = interaction.options.getString("title");
+
+    // 👇 まず応答を遅延する (これが重要)
+    await interaction.deferReply({ ephemeral: true });
 
     const embed = new EmbedBuilder()
       .setTitle("🎵 新しい曲リクエスト")
@@ -26,6 +31,7 @@ module.exports = {
       }
     }
 
-    await interaction.reply({ content: "✅ リクエストを送信しました。ご協力ありがとうございます！", ephemeral: true });
+    // 👇 最後に返信を完了する
+    await interaction.editReply({ content: "✅ リクエストを送信しました。ご協力ありがとうございます！" });
   }
 };
