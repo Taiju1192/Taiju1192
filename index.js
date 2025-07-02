@@ -58,6 +58,31 @@ client.once(Events.ClientReady, async () => {
 
 // コマンド実行イベント
 client.on(Events.InteractionCreate, async interaction => {
+  // ✅ セレクトメニュー（music-setting）
+  if (interaction.isStringSelectMenu() && interaction.customId === "music_settings") {
+    let response = "";
+    switch (interaction.values[0]) {
+      case "volume":
+        response = "🔊 音量調整を選択しました。";
+        break;
+      case "repeat":
+        response = "🔁 リピート再生の切り替えを行います。";
+        break;
+      case "speed":
+        response = "⏩ スピード調整のオプションが選ばれました。";
+        break;
+      case "shuffle":
+        response = "🔀 シャッフル再生の設定を変更します。";
+        break;
+      default:
+        response = "⚠ 不明なオプションです。";
+    }
+
+    await interaction.reply({ content: response, ephemeral: true });
+    return; // 他の処理をスキップ
+  }
+
+  // ✅ スラッシュコマンド（通常）
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
