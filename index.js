@@ -2,6 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const { Client, GatewayIntentBits, Partials, Events, Collection, REST, Routes } = require("discord.js");
 const fs = require("fs");
+require('./prefix-handler');
 
 // Botクライアントの初期化
 const client = new Client({
