@@ -12,6 +12,7 @@ const {
 } = require("discord.js");
 require("./prefix-handler");
 
+// Bot クライアントの初期化
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -49,7 +50,7 @@ for (const file of eventFiles) {
 // Botログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// スラッシュコマンド登録（複数ギルド）
+// スラッシュコマンドを2つのギルドに登録
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -72,7 +73,7 @@ client.once("ready", async () => {
   }
 });
 
-// Webサーバー（Render対応）
+// Webサーバー（Render用）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
