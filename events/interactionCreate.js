@@ -10,7 +10,7 @@ const { evaluate } = require("mathjs");
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
-    // セレクトメニュー選択 → モーダル表示
+    // ✅ 計算メニューが選ばれた → モーダル表示
     if (interaction.isStringSelectMenu() && interaction.customId === "calc_menu") {
       const modal = new ModalBuilder()
         .setCustomId("calculator_modal")
@@ -18,7 +18,7 @@ module.exports = {
 
       const input = new TextInputBuilder()
         .setCustomId("expression_input")
-        .setLabel("例: 2 + 3 * (4 - 1)")
+        .setLabel("計算式を入力（例: 2 + 3 * (4 - 1)）")
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
@@ -29,25 +29,25 @@ module.exports = {
       return;
     }
 
-    // モーダル送信時 → 数式を評価
+    // ✅ モーダルが送信された → 数式を評価
     if (interaction.isModalSubmit() && interaction.customId === "calculator_modal") {
       const expression = interaction.fields.getTextInputValue("expression_input");
       try {
         const result = evaluate(expression);
         await interaction.reply({
           content: `✅ \`${expression}\` の結果は \`${result}\` です。`,
-          ephemeral: true
+          flags: 64
         });
       } catch (error) {
         await interaction.reply({
           content: "❌ 数式の形式が正しくありません。もう一度お試しください。",
-          ephemeral: true
+          flags: 64
         });
       }
       return;
     }
 
-    // 他のセレクトメニュー（music-setting など）
+    // ✅ 他のセレクトメニュー例（music-setting）
     if (interaction.isStringSelectMenu() && interaction.customId === "music_settings") {
       const map = {
         volume: "🔊 音量調整を選択しました。",
@@ -57,11 +57,11 @@ module.exports = {
       };
 
       const response = map[interaction.values[0]] || "⚠ 不明なオプションです。";
-      await interaction.reply({ content: response, ephemeral: true });
+      await interaction.reply({ content: response, flags: 64 });
       return;
     }
 
-    // スラッシュコマンド処理
+    // ✅ スラッシュコマンド実行
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
@@ -70,10 +70,11 @@ module.exports = {
         await command.execute(interaction);
       } catch (error) {
         console.error("❌ コマンド実行エラー:", error);
+        const msg = { content: "⚠ コマンドの実行中にエラーが発生しました。", flags: 64 };
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content: "⚠ エラーが発生しました。", ephemeral: true });
+          await interaction.followUp(msg);
         } else {
-          await interaction.reply({ content: "⚠ エラーが発生しました。", ephemeral: true });
+          await interaction.reply(msg);
         }
       }
     }
