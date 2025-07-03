@@ -12,7 +12,7 @@ const {
 } = require("discord.js");
 require("./prefix-handler");
 
-// Bot クライアントの初期化
+// Bot クライアント初期化
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -50,7 +50,7 @@ for (const file of eventFiles) {
 // Botログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// スラッシュコマンドを2つのギルドに登録
+// スラッシュコマンド登録（複数ギルド）
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -61,19 +61,19 @@ client.once("ready", async () => {
       Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
       { body: commands }
     );
-    console.log(`✅ GUILD_ID にコマンド登録完了`);
+    console.log(`✅ GUILD_ID に登録完了`);
 
     await rest.put(
       Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID2),
       { body: commands }
     );
-    console.log(`✅ GUILD_ID2 にコマンド登録完了`);
+    console.log(`✅ GUILD_ID2 に登録完了`);
   } catch (error) {
     console.error("❌ コマンド登録エラー:", error);
   }
 });
 
-// Webサーバー（Render用）
+// Webサーバー（Render対応）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
