@@ -23,6 +23,13 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
+const googleCommand = require('./commands/google.js');
+
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+  await googleCommand.handle(message, client);
+});
+
 // コマンド読み込み
 client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
