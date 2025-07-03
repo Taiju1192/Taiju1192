@@ -11,6 +11,8 @@ module.exports = {
     .setDescription("小〜高1までの計算メニュー"),
 
   async execute(interaction) {
+    await interaction.deferReply({ flags: 64 }); // ✅ 応答を遅延 + flags対応
+
     const embed = new EmbedBuilder()
       .setTitle("📐 計算メニュー")
       .setDescription("学年ごとのテーマから計算ジャンルを選んでください。")
@@ -39,10 +41,9 @@ module.exports = {
 
     const row = new ActionRowBuilder().addComponents(menu);
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [embed],
-      components: [row],
-      flags: 64 // ✅ ephemeral の代替
+      components: [row]
     });
   }
 };
