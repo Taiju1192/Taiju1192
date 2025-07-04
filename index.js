@@ -10,26 +10,26 @@ const {
   REST,
   Routes
 } = require("discord.js");
-require("./prefix-handler"); // 必要なら残す
+require("./prefix-handler"); // 任意
 
-// ✅ Bot クライアント初期化（Intent と Partial を修正）
+// ✅ Bot クライアント初期化（Intent & Partial 完全対応）
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.MessageContent,          // ✅ メッセージ本文取得用
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMessageReactions // ✅ 必須：リアクション検知用
+    GatewayIntentBits.GuildMessageReactions     // ✅ リアクション検知用
   ],
   partials: [
     Partials.Channel,
-    Partials.Message,   // ✅ メッセージパーシャル対応
-    Partials.Reaction,  // ✅ リアクションパーシャル対応
-    Partials.User       // ✅ ユーザー情報も取得
+    Partials.Message,     // ✅ パーシャルメッセージ取得用
+    Partials.Reaction,    // ✅ パーシャルリアクション取得用
+    Partials.User         // ✅ パーシャルユーザー取得用
   ]
 });
 
-// ✅ コマンド登録用コレクション
+// ✅ コマンドコレクション
 client.commands = new Collection();
 const commands = [];
 
@@ -38,7 +38,6 @@ const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith("
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-
   if (command.data && command.data.name) {
     client.commands.set(command.data.name, command);
     commands.push(command.data.toJSON());
@@ -49,8 +48,9 @@ for (const file of commandFiles) {
   }
 }
 
-// ✅ メッセージ監視イベント（google.jsなど）
+// ✅ メッセージ監視イベント（google.jsなどに対応）
 client.on("messageCreate", async (message) => {
+  console.log(`[受信] ${message.author.tag}: ${message.content}`);
   if (message.author.bot) return;
 
   const googleCommand = client.commands.get("google-reaction");
@@ -72,10 +72,10 @@ for (const file of eventFiles) {
   }
 }
 
-// ✅ Botログイン
+// ✅ Bot ログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// ✅ スラッシュコマンド登録（複数ギルドに対応）
+// ✅ スラッシュコマンド登録（複数ギルド対応）
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -102,7 +102,7 @@ client.once("ready", async () => {
   }
 });
 
-// ✅ Webサーバー（Renderのヘルスチェック用）
+// ✅ Webサーバー（Render対応用ヘルスチェック）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
