@@ -1,5 +1,6 @@
 const express = require("express");
-require("dotenv").config();
+require("dotenv").config(); // ← Render では不要（環境変数は自動でセットされる）
+
 const fs = require("fs");
 const path = require("path");
 const {
@@ -10,7 +11,8 @@ const {
   REST,
   Routes
 } = require("discord.js");
-require("./prefix-handler"); // 任意のプリフィックス処理（不要なら削除OK）
+
+require("./prefix-handler"); // 任意機能。なければ削除してもOK
 
 // ✅ Bot クライアントの初期化（Intent & Partial 設定）
 const client = new Client({
@@ -29,13 +31,12 @@ const client = new Client({
   ]
 });
 
-// ✅ コマンド登録用
+// ✅ コマンド格納用コレクション
 client.commands = new Collection();
 const commands = [];
 
-// ✅ コマンド読み込み（./commands）
+// ✅ ./commands フォルダからコマンドを読み込む
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
-
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   if (command.data && command.data.name) {
@@ -48,9 +49,9 @@ for (const file of commandFiles) {
   }
 }
 
-// ✅ メッセージ監視イベント
+// ✅ メッセージイベントで google-reaction を処理
 client.on("messageCreate", async (message) => {
-  console.log(`[受信] ${message.author.tag}: ${message.content}`); // 🔍 ログ確認用
+  console.log(`[受信] ${message.author.tag}: ${message.content}`); // デバッグ用ログ
   if (message.author.bot) return;
 
   const googleCommand = client.commands.get("google-reaction");
@@ -59,7 +60,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ✅ イベント読み込み（./events）
+// ✅ ./events フォルダからイベントを読み込む
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"));
 
@@ -73,9 +74,15 @@ for (const file of eventFiles) {
 }
 
 // ✅ Discord Bot にログイン
-client.login(process.env.DISCORD_TOKEN);
+if (!process.env.DISCORD_TOKEN) {
+  console.error("❌ DISCORD_TOKEN が読み込まれていません。環境変数を確認してください。");
+} else {
+  client.login(process.env.DISCORD_TOKEN).catch(err => {
+    console.error("❌ client.login に失敗しました:", err);
+  });
+}
 
-// ✅ スラッシュコマンドをギルドに登録
+// ✅ スラッシュコマンド登録（GUILD単位）
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -102,7 +109,7 @@ client.once("ready", async () => {
   }
 });
 
-// ✅ Render用 Web サーバー（ヘルスチェック）
+// ✅ Render のヘルスチェック用 Web サーバー
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
