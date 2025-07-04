@@ -77,10 +77,11 @@ for (const file of eventFiles) {
 if (!process.env.DISCORD_TOKEN) {
   console.error("❌ DISCORD_TOKEN が読み込まれていません。環境変数を確認してください。");
 } else {
-  client.login(process.env.DISCORD_TOKEN).catch(err => {
-    console.error("❌ client.login に失敗しました:", err);
-  });
+  client.login(process.env.DISCORD_TOKEN)
+    .then(() => console.log("🔐 Discord login success!")) // ← 成功ログ
+    .catch(err => console.error("❌ Discord login failed:", err)); // ← 失敗理由
 }
+
 
 // ✅ スラッシュコマンド登録（GUILD単位）
 client.once("ready", async () => {
