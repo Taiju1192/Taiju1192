@@ -12,56 +12,54 @@ const {
 } = require("discord.js");
 require("./prefix-handler"); // 必要なら残す
 
-// Bot クライアント初期化
+// ✅ Bot クライアント初期化（Intent と Partial を修正）
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessageReactions // ✅ 必須：リアクション検知用
   ],
-  partials: [Partials.Channel]
+  partials: [
+    Partials.Channel,
+    Partials.Message,   // ✅ メッセージパーシャル対応
+    Partials.Reaction,  // ✅ リアクションパーシャル対応
+    Partials.User       // ✅ ユーザー情報も取得
+  ]
 });
 
-// コマンド登録用コレクション
+// ✅ コマンド登録用コレクション
 client.commands = new Collection();
 const commands = [];
 
-// コマンドファイル読み込み
+// ✅ コマンドファイル読み込み
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
 
-  // Slash Command の場合（data.nameが存在）
   if (command.data && command.data.name) {
     client.commands.set(command.data.name, command);
     commands.push(command.data.toJSON());
-  }
-
-  // 非Slash Command用（例：google.jsのhandle関数）
-  else if (command.name) {
+  } else if (command.name) {
     client.commands.set(command.name, command);
-  }
-
-  // どちらもなければ警告
-  else {
+  } else {
     console.warn(`[WARN] コマンドファイル ${file} に有効な構造がありません。スキップされました。`);
   }
 }
 
-// メッセージ監視イベント（google.jsなど）
+// ✅ メッセージ監視イベント（google.jsなど）
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // メッセージハンドラを手動で呼び出す（例：google-reaction）
   const googleCommand = client.commands.get("google-reaction");
   if (googleCommand && typeof googleCommand.handle === "function") {
     await googleCommand.handle(message, client);
   }
 });
 
-// イベントファイル読み込み
+// ✅ イベントファイル読み込み
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"));
 
@@ -74,10 +72,10 @@ for (const file of eventFiles) {
   }
 }
 
-// Botログイン
+// ✅ Botログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// スラッシュコマンド登録（複数ギルドに対応）
+// ✅ スラッシュコマンド登録（複数ギルドに対応）
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -104,7 +102,7 @@ client.once("ready", async () => {
   }
 });
 
-// Webサーバー（Render対応ヘルスチェック用）
+// ✅ Webサーバー（Renderのヘルスチェック用）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
