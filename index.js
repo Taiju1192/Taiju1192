@@ -1,6 +1,4 @@
 const express = require("express");
-require("dotenv").config(); // ← Render では不要（環境変数は自動でセットされる）
-
 const fs = require("fs");
 const path = require("path");
 const {
@@ -12,30 +10,35 @@ const {
   Routes
 } = require("discord.js");
 
-require("./prefix-handler"); // 任意機能。なければ削除してもOK
+// 🚀 起動ログ
+console.log("🚀 起動開始");
 
-// ✅ Bot クライアントの初期化（Intent & Partial 設定）
+// ✅ 環境変数デバッグ表示（Render の設定ミスを検出）
+console.log("DISCORD_TOKEN:", !!process.env.DISCORD_TOKEN);
+console.log("CLIENT_ID:", process.env.CLIENT_ID || "❌ 未設定");
+console.log("GUILD_ID:", process.env.GUILD_ID || "❌ 未設定");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,          // ✅ メッセージ内容を取得
+    GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMessageReactions    // ✅ リアクションを監視
+    GatewayIntentBits.GuildMessageReactions
   ],
   partials: [
     Partials.Channel,
-    Partials.Message,     // ✅ キャッシュ外のメッセージ対応
-    Partials.Reaction,    // ✅ キャッシュ外のリアクション対応
-    Partials.User         // ✅ キャッシュ外のユーザー情報対応
+    Partials.Message,
+    Partials.Reaction,
+    Partials.User
   ]
 });
 
-// ✅ コマンド格納用コレクション
+// ✅ コマンド登録用
 client.commands = new Collection();
 const commands = [];
 
-// ✅ ./commands フォルダからコマンドを読み込む
+// ✅ ./commands フォルダからコマンド読み込み
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
@@ -45,13 +48,13 @@ for (const file of commandFiles) {
   } else if (command.name) {
     client.commands.set(command.name, command);
   } else {
-    console.warn(`[WARN] コマンドファイル ${file} に有効な構造がありません。スキップされました。`);
+    console.warn(`[WARN] 無効なコマンド構造: ${file}`);
   }
 }
 
-// ✅ メッセージイベントで google-reaction を処理
+// ✅ メッセージイベントでコマンド発火（例：google-reaction）
 client.on("messageCreate", async (message) => {
-  console.log(`[受信] ${message.author.tag}: ${message.content}`); // デバッグ用ログ
+  console.log(`[受信] ${message.author.tag}: ${message.content}`);
   if (message.author.bot) return;
 
   const googleCommand = client.commands.get("google-reaction");
@@ -60,10 +63,9 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ✅ ./events フォルダからイベントを読み込む
+// ✅ ./events フォルダからイベント読み込み
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"));
-
 for (const file of eventFiles) {
   const event = require(path.join(eventsPath, file));
   if (event.once) {
@@ -73,17 +75,16 @@ for (const file of eventFiles) {
   }
 }
 
-// ✅ Discord Bot にログイン
+// ✅ Discord Bot にログイン（失敗時のログ付き）
 if (!process.env.DISCORD_TOKEN) {
   console.error("❌ DISCORD_TOKEN が読み込まれていません。環境変数を確認してください。");
 } else {
   client.login(process.env.DISCORD_TOKEN)
-    .then(() => console.log("🔐 Discord login success!")) // ← 成功ログ
-    .catch(err => console.error("❌ Discord login failed:", err)); // ← 失敗理由
+    .then(() => console.log("🔐 Discord login success!"))
+    .catch(err => console.error("❌ Discord login failed:", err));
 }
 
-
-// ✅ スラッシュコマンド登録（GUILD単位）
+// ✅ Bot 起動後のスラッシュコマンド登録
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -95,7 +96,7 @@ client.once("ready", async () => {
         Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
         { body: commands }
       );
-      console.log(`✅ GUILD_ID にコマンド登録完了`);
+      console.log("✅ GUILD_ID にコマンド登録完了");
     }
 
     if (process.env.GUILD_ID2) {
@@ -103,14 +104,14 @@ client.once("ready", async () => {
         Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID2),
         { body: commands }
       );
-      console.log(`✅ GUILD_ID2 にコマンド登録完了`);
+      console.log("✅ GUILD_ID2 にコマンド登録完了");
     }
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
 });
 
-// ✅ Render のヘルスチェック用 Web サーバー
+// ✅ Render 用の Web サーバー（ヘルスチェック）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
