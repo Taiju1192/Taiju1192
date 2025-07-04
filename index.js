@@ -10,30 +10,30 @@ const {
   REST,
   Routes
 } = require("discord.js");
-require("./prefix-handler"); // 任意
+require("./prefix-handler"); // 任意のプリフィックス処理（不要なら削除OK）
 
-// ✅ Bot クライアント初期化（Intent & Partial 完全対応）
+// ✅ Bot クライアントの初期化（Intent & Partial 設定）
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,          // ✅ メッセージ本文取得用
+    GatewayIntentBits.MessageContent,          // ✅ メッセージ内容を取得
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMessageReactions     // ✅ リアクション検知用
+    GatewayIntentBits.GuildMessageReactions    // ✅ リアクションを監視
   ],
   partials: [
     Partials.Channel,
-    Partials.Message,     // ✅ パーシャルメッセージ取得用
-    Partials.Reaction,    // ✅ パーシャルリアクション取得用
-    Partials.User         // ✅ パーシャルユーザー取得用
+    Partials.Message,     // ✅ キャッシュ外のメッセージ対応
+    Partials.Reaction,    // ✅ キャッシュ外のリアクション対応
+    Partials.User         // ✅ キャッシュ外のユーザー情報対応
   ]
 });
 
-// ✅ コマンドコレクション
+// ✅ コマンド登録用
 client.commands = new Collection();
 const commands = [];
 
-// ✅ コマンドファイル読み込み
+// ✅ コマンド読み込み（./commands）
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
@@ -48,9 +48,9 @@ for (const file of commandFiles) {
   }
 }
 
-// ✅ メッセージ監視イベント（google.jsなどに対応）
+// ✅ メッセージ監視イベント
 client.on("messageCreate", async (message) => {
-  console.log(`[受信] ${message.author.tag}: ${message.content}`);
+  console.log(`[受信] ${message.author.tag}: ${message.content}`); // 🔍 ログ確認用
   if (message.author.bot) return;
 
   const googleCommand = client.commands.get("google-reaction");
@@ -59,7 +59,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// ✅ イベントファイル読み込み
+// ✅ イベント読み込み（./events）
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"));
 
@@ -72,10 +72,10 @@ for (const file of eventFiles) {
   }
 }
 
-// ✅ Bot ログイン
+// ✅ Discord Bot にログイン
 client.login(process.env.DISCORD_TOKEN);
 
-// ✅ スラッシュコマンド登録（複数ギルド対応）
+// ✅ スラッシュコマンドをギルドに登録
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
 
@@ -102,7 +102,7 @@ client.once("ready", async () => {
   }
 });
 
-// ✅ Webサーバー（Render対応用ヘルスチェック）
+// ✅ Render用 Web サーバー（ヘルスチェック）
 const app = express();
 app.get("/", (req, res) => res.send("Bot is running!"));
 const PORT = process.env.PORT || 3000;
