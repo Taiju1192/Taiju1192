@@ -95,7 +95,7 @@ async function playNext(guildId, firstTrack = null) {
     playerData.player.play(resource);
     playerData.currentAudioPath = audioPath;
 
-    await playerData.interaction.followUp(`🎶 再生中: **${nextTrack.title}**`);
+    await playerData.textChannel.send(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
     await playerData.interaction.followUp("⚠️ 曲の再生中にエラーが発生しました。");
