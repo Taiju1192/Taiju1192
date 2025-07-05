@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -9,6 +9,7 @@ const {
   StreamType,
 } = require("@discordjs/voice");
 
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const { spawn } = require("child_process");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -42,6 +43,7 @@ function findTracksByKeyword(keyword) {
   return tracks.filter(track => track.title.toLowerCase().includes(keyword));
 }
 
+// ✅ 修正された関数（再生開始前にストリーム準備を待つ）
 async function createAudioResourceFromSrc(src) {
   let audioPath = src;
   if (audioPath.startsWith("http")) {
@@ -56,6 +58,12 @@ async function createAudioResourceFromSrc(src) {
     "-ac", "2",
     "pipe:1"
   ], { stdio: ["pipe", "pipe", "pipe"] });
+
+  // 🔧 再生前に「readable」イベントを待つことで早送りを防止
+  await new Promise((resolve, reject) => {
+    ffmpeg.stdout.once("readable", resolve);
+    ffmpeg.once("error", reject);
+  });
 
   const resource = createAudioResource(ffmpeg.stdout, {
     inputType: StreamType.Raw,
@@ -98,7 +106,7 @@ async function playNext(guildId, firstTrack = null) {
     await playerData.textChannel.send(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
-    await playerData.interaction.followUp("⚠️ 曲の再生中にエラーが発生しました。");
+    await playerData.textChannel.send("⚠️ 曲の再生中にエラーが発生しました。");
     playerData.connection.destroy();
     activePlayers.delete(guildId);
   }
@@ -162,10 +170,8 @@ module.exports = {
 
           try {
             const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
-
             const index = parseInt(selectInteraction.values[0], 10);
             selectedTrack = matchedTracks[index];
-
             await selectInteraction.update({ content: `✅ 「${selectedTrack.title}」を再生します。`, embeds: [], components: [] });
           } catch {
             return interaction.editReply({ content: "⏰ 選択がタイムアウトしました。コマンドをやり直してください。", embeds: [], components: [] });
@@ -192,8 +198,9 @@ module.exports = {
       player.on(AudioPlayerStatus.Idle, async () => {
         if (!activePlayers.has(guildId)) return;
 
-        if (activePlayers.get(guildId).currentAudioPath?.startsWith(os.tmpdir())) {
-          fs.unlink(activePlayers.get(guildId).currentAudioPath, e => { if (e) console.error(e); });
+        const currentPath = activePlayers.get(guildId).currentAudioPath;
+        if (currentPath?.startsWith(os.tmpdir())) {
+          fs.unlink(currentPath, e => { if (e) console.error(e); });
         }
 
         playNext(guildId);
@@ -201,7 +208,7 @@ module.exports = {
 
       player.on("error", error => {
         console.error("❌ 再生エラー:", error);
-        interaction.followUp("⚠️ 再生中にエラーが発生しました。");
+        interaction.channel.send("⚠️ 再生中にエラーが発生しました。");
         connection.destroy();
         activePlayers.delete(guildId);
       });
@@ -215,11 +222,10 @@ module.exports = {
         currentTrack: null,
         currentAudioPath: null,
         interaction,
+        textChannel: interaction.channel // 🔧 Webhookエラー対策で保存
       });
 
       await playNext(guildId, selectedTrack);
-
-      // 修正済み：新しいメッセージとして送信
       await interaction.followUp("▶️ 再生を開始しました。");
     } catch (error) {
       console.error("❌ 再生失敗:", error);
