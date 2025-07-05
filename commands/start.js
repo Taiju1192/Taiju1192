@@ -1,4 +1,9 @@
-const { EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder
+} = require("discord.js");
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -6,10 +11,9 @@ const {
   AudioPlayerStatus,
   entersState,
   VoiceConnectionStatus,
-  StreamType,
+  StreamType
 } = require("@discordjs/voice");
 
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 const { spawn } = require("child_process");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -43,7 +47,7 @@ function findTracksByKeyword(keyword) {
   return tracks.filter(track => track.title.toLowerCase().includes(keyword));
 }
 
-// ✅ 修正された関数（再生開始前にストリーム準備を待つ）
+// ✅ 再生開始前に readable を待つ
 async function createAudioResourceFromSrc(src) {
   let audioPath = src;
   if (audioPath.startsWith("http")) {
@@ -59,7 +63,6 @@ async function createAudioResourceFromSrc(src) {
     "pipe:1"
   ], { stdio: ["pipe", "pipe", "pipe"] });
 
-  // 🔧 再生前に「readable」イベントを待つことで早送りを防止
   await new Promise((resolve, reject) => {
     ffmpeg.stdout.once("readable", resolve);
     ffmpeg.once("error", reject);
@@ -69,15 +72,6 @@ async function createAudioResourceFromSrc(src) {
     inputType: StreamType.Raw,
     inlineVolume: true
   });
-
-  ffmpeg.stderr.on("data", chunk => {
-    const msg = chunk.toString();
-    if (!msg.includes("size=")) {
-      console.log(`ffmpeg stderr: ${msg}`);
-    }
-  });
-  ffmpeg.on("error", error => console.error("❌ ffmpeg 起動エラー:", error));
-  ffmpeg.stdout.on("error", err => console.error("❌ ffmpeg 出力エラー:", err));
 
   return { resource, audioPath };
 }
@@ -123,23 +117,32 @@ module.exports = {
   async execute(interaction) {
     const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel) {
-      return interaction.reply({ content: "🔊 まずボイスチャンネルに参加してください！", ephemeral: true });
+      return interaction.reply({
+        content: "🔊 まずボイスチャンネルに参加してください！",
+        ephemeral: true
+      });
     }
 
     const guildId = interaction.guild.id;
 
     if (activePlayers.has(guildId)) {
-      return interaction.reply({ content: "❗ 既に再生中です。止めるには /stop を使ってください。", ephemeral: true });
+      return interaction.reply({
+        content: "❗ 既に再生中です。止めるには /stop を使ってください。",
+        ephemeral: true
+      });
     }
 
-    await interaction.deferReply();
+    await interaction.deferReply(); // 一度だけ返信予約
 
     const query = interaction.options.getString("query");
     let selectedTrack = null;
 
     if (query) {
       if (query.startsWith("http")) {
-        selectedTrack = { title: decodeURIComponent(query.split("/").pop()), src: query };
+        selectedTrack = {
+          title: decodeURIComponent(query.split("/").pop()),
+          src: query
+        };
       } else {
         const matchedTracks = findTracksByKeyword(query);
 
@@ -172,9 +175,9 @@ module.exports = {
             const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
             const index = parseInt(selectInteraction.values[0], 10);
             selectedTrack = matchedTracks[index];
-            await selectInteraction.update({ content: `✅ 「${selectedTrack.title}」を再生します。`, embeds: [], components: [] });
+            await selectInteraction.update({ content: `✅ 「${selectedTrack.title}」を再生します。`, components: [], embeds: [] });
           } catch {
-            return interaction.editReply({ content: "⏰ 選択がタイムアウトしました。コマンドをやり直してください。", embeds: [], components: [] });
+            return interaction.editReply({ content: "⏰ 選択がタイムアウトしました。コマンドをやり直してください。", components: [], embeds: [] });
           }
         }
       }
@@ -222,11 +225,12 @@ module.exports = {
         currentTrack: null,
         currentAudioPath: null,
         interaction,
-        textChannel: interaction.channel // 🔧 Webhookエラー対策で保存
+        textChannel: interaction.channel // followUp()代替
       });
 
       await playNext(guildId, selectedTrack);
-      await interaction.followUp("▶️ 再生を開始しました。");
+
+      await interaction.editReply("▶️ 再生を開始しました。");
     } catch (error) {
       console.error("❌ 再生失敗:", error);
       await interaction.editReply("❌ 音楽の再生に失敗しました。");
