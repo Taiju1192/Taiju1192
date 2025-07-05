@@ -47,7 +47,6 @@ function findTracksByKeyword(keyword) {
   return tracks.filter(track => track.title.toLowerCase().includes(keyword));
 }
 
-// ✅ 再生開始前に readable を待つ
 async function createAudioResourceFromSrc(src) {
   let audioPath = src;
   if (audioPath.startsWith("http")) {
@@ -100,7 +99,9 @@ async function playNext(guildId, firstTrack = null) {
     await playerData.textChannel.send(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
     console.error("❌ 曲の再生中にエラー:", err);
-    await playerData.textChannel.send("⚠️ 曲の再生中にエラーが発生しました。");
+    try {
+      await playerData.textChannel.send("⚠️ 曲の再生中にエラーが発生しました。");
+    } catch {}
     playerData.connection.destroy();
     activePlayers.delete(guildId);
   }
@@ -132,76 +133,85 @@ module.exports = {
       });
     }
 
-    await interaction.deferReply(); // 一度だけ返信予約
+    try {
+      await interaction.deferReply(); // ✅ 3秒以内に必ず応答確保
 
-    const query = interaction.options.getString("query");
-    let selectedTrack = null;
+      const query = interaction.options.getString("query");
+      let selectedTrack = null;
 
-    if (query) {
-      if (query.startsWith("http")) {
-        selectedTrack = {
-          title: decodeURIComponent(query.split("/").pop()),
-          src: query
-        };
-      } else {
-        const matchedTracks = findTracksByKeyword(query);
-
-        if (matchedTracks.length === 0) {
-          return interaction.editReply(`⚠️ キーワード「${query}」に一致する曲は見つかりませんでした。`);
-        } else if (matchedTracks.length === 1) {
-          selectedTrack = matchedTracks[0];
+      if (query) {
+        if (query.startsWith("http")) {
+          selectedTrack = {
+            title: decodeURIComponent(query.split("/").pop()),
+            src: query
+          };
         } else {
-          const options = matchedTracks.slice(0, 25).map((track, i) => ({
-            label: track.title.length > 100 ? track.title.slice(0, 97) + "..." : track.title,
-            value: String(i),
-          }));
+          const matchedTracks = findTracksByKeyword(query);
 
-          const embed = new EmbedBuilder()
-            .setTitle("曲の候補が複数見つかりました")
-            .setDescription("下のメニューから再生したい曲を選んでください");
+          if (matchedTracks.length === 0) {
+            return interaction.editReply(`⚠️ キーワード「${query}」に一致する曲は見つかりませんでした。`);
+          } else if (matchedTracks.length === 1) {
+            selectedTrack = matchedTracks[0];
+          } else {
+            const options = matchedTracks.slice(0, 25).map((track, i) => ({
+              label: track.title.length > 100 ? track.title.slice(0, 97) + "..." : track.title,
+              value: String(i),
+            }));
 
-          const row = new ActionRowBuilder().addComponents(
-            new StringSelectMenuBuilder()
-              .setCustomId("selectTrack")
-              .setPlaceholder("曲を選択してください")
-              .addOptions(options)
-          );
+            const embed = new EmbedBuilder()
+              .setTitle("曲の候補が複数見つかりました")
+              .setDescription("下のメニューから再生したい曲を選んでください");
 
-          await interaction.editReply({ embeds: [embed], components: [row] });
+            const row = new ActionRowBuilder().addComponents(
+              new StringSelectMenuBuilder()
+                .setCustomId("selectTrack")
+                .setPlaceholder("曲を選択してください")
+                .addOptions(options)
+            );
 
-          const filter = i => i.customId === "selectTrack" && i.user.id === interaction.user.id;
+            await interaction.editReply({ embeds: [embed], components: [row] });
 
-          try {
-            const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
-            const index = parseInt(selectInteraction.values[0], 10);
-            selectedTrack = matchedTracks[index];
-            await selectInteraction.update({ content: `✅ 「${selectedTrack.title}」を再生します。`, components: [], embeds: [] });
-          } catch {
-            return interaction.editReply({ content: "⏰ 選択がタイムアウトしました。コマンドをやり直してください。", components: [], embeds: [] });
+            const filter = i => i.customId === "selectTrack" && i.user.id === interaction.user.id;
+
+            try {
+              const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
+              const index = parseInt(selectInteraction.values[0], 10);
+              selectedTrack = matchedTracks[index];
+              await selectInteraction.update({
+                content: `✅ 「${selectedTrack.title}」を再生します。`,
+                components: [],
+                embeds: []
+              });
+            } catch {
+              return interaction.editReply({
+                content: "⏰ 選択がタイムアウトしました。コマンドをやり直してください。",
+                components: [],
+                embeds: []
+              });
+            }
           }
         }
       }
-    }
 
-    if (!selectedTrack) {
-      selectedTrack = tracks[Math.floor(Math.random() * tracks.length)];
-    }
+      if (!selectedTrack) {
+        selectedTrack = tracks[Math.floor(Math.random() * tracks.length)];
+      }
 
-    const connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: voiceChannel.guild.id,
-      adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-    });
+      const connection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: voiceChannel.guild.id,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+      });
 
-    try {
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
 
       const player = createAudioPlayer();
 
       player.on(AudioPlayerStatus.Idle, async () => {
-        if (!activePlayers.has(guildId)) return;
+        const playerData = activePlayers.get(guildId);
+        if (!playerData) return;
 
-        const currentPath = activePlayers.get(guildId).currentAudioPath;
+        const currentPath = playerData.currentAudioPath;
         if (currentPath?.startsWith(os.tmpdir())) {
           fs.unlink(currentPath, e => { if (e) console.error(e); });
         }
@@ -211,7 +221,9 @@ module.exports = {
 
       player.on("error", error => {
         console.error("❌ 再生エラー:", error);
-        interaction.channel.send("⚠️ 再生中にエラーが発生しました。");
+        try {
+          interaction.channel.send("⚠️ 再生中にエラーが発生しました。");
+        } catch {}
         connection.destroy();
         activePlayers.delete(guildId);
       });
@@ -225,17 +237,25 @@ module.exports = {
         currentTrack: null,
         currentAudioPath: null,
         interaction,
-        textChannel: interaction.channel // followUp()代替
+        textChannel: interaction.channel
       });
 
       await playNext(guildId, selectedTrack);
-
       await interaction.editReply("▶️ 再生を開始しました。");
+
     } catch (error) {
-      console.error("❌ 再生失敗:", error);
-      await interaction.editReply("❌ 音楽の再生に失敗しました。");
-      connection.destroy();
-      activePlayers.delete(guildId);
+      console.error("❌ /start コマンド実行中のエラー:", error);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: "⚠️ エラーが発生しました。再生できませんでした。",
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: "⚠️ エラーが発生しました。再生できませんでした。",
+          ephemeral: true
+        });
+      }
     }
   }
 };
