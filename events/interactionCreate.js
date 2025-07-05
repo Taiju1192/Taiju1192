@@ -11,7 +11,7 @@ module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     try {
-      // ✅ /calculator のセレクトメニュー
+      // ✅ 計算系（/calculator）
       if (interaction.isStringSelectMenu() && interaction.customId === "calc_menu") {
         const modal = new ModalBuilder()
           .setCustomId("calculator_modal")
@@ -26,11 +26,14 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(input);
         modal.addComponents(row);
 
-        await interaction.showModal(modal);
+        try {
+          await interaction.showModal(modal);
+        } catch (err) {
+          console.error("❌ モーダル表示失敗:", err);
+        }
         return;
       }
 
-      // ✅ 計算モーダルの処理
       if (interaction.isModalSubmit() && interaction.customId === "calculator_modal") {
         const expression = interaction.fields.getTextInputValue("expression_input");
         try {
@@ -48,7 +51,7 @@ module.exports = {
         return;
       }
 
-      // ✅ 音楽設定メニューの処理
+      // ✅ 音楽設定メニュー
       if (interaction.isStringSelectMenu() && interaction.customId === "music_settings") {
         const selected = interaction.values[0];
         const playerData = interaction.client.activePlayers?.get(interaction.guildId);
@@ -67,12 +70,18 @@ module.exports = {
 
           const row = new ActionRowBuilder().addComponents(input);
           modal.addComponents(row);
-          return interaction.showModal(modal);
+
+          try {
+            await interaction.showModal(modal);
+          } catch (err) {
+            console.error("❌ モーダル表示に失敗:", err);
+          }
+          return;
         }
 
         if (selected === "repeat") {
           if (!playerData) {
-            return interaction.reply({ content: "⚠ 再生中の曲がありません。", ephemeral: true });
+            return interaction.reply({ content: "⚠ プレイヤーが見つかりません。", ephemeral: true });
           }
 
           playerData.repeat = !playerData.repeat;
@@ -84,14 +93,14 @@ module.exports = {
 
         if (selected === "shuffle") {
           if (!playerData || playerData.queue.length === 0) {
-            return interaction.reply({ content: "⚠ シャッフルする曲がありません。", ephemeral: true });
+            return interaction.reply({ content: "⚠ シャッフル対象がありません。", ephemeral: true });
           }
 
           playerData.queue.sort(() => Math.random() - 0.5);
           return interaction.reply({ content: "🔀 再生キューをシャッフルしました。", ephemeral: true });
         }
 
-        return interaction.reply({ content: "⚠ 不明なオプションです。", ephemeral: true });
+        return interaction.reply({ content: "⚠ 不明な選択肢です。", ephemeral: true });
       }
 
       // ✅ 音量モーダルの処理
@@ -101,7 +110,7 @@ module.exports = {
 
         if (isNaN(volume) || volume <= 0 || volume > 2) {
           return interaction.reply({
-            content: "❌ 無効な音量です。0.1〜2.0 の数値を入力してください。",
+            content: "❌ 無効な音量。0.1〜2.0 の数値で入力してください。",
             ephemeral: true
           });
         }
@@ -123,7 +132,7 @@ module.exports = {
         });
       }
 
-      // ✅ スラッシュコマンド
+      // ✅ スラッシュコマンド実行
       if (interaction.isChatInputCommand()) {
         const command = interaction.client.commands.get(interaction.commandName);
         if (!command) return;
@@ -132,16 +141,20 @@ module.exports = {
           await command.execute(interaction);
         } catch (error) {
           console.error("❌ コマンド実行エラー:", error);
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({
-              content: "⚠ コマンド実行中にエラーが発生しました。",
-              ephemeral: true
-            });
-          } else {
-            await interaction.reply({
-              content: "⚠ コマンド実行中にエラーが発生しました。",
-              ephemeral: true
-            });
+          try {
+            if (interaction.replied || interaction.deferred) {
+              await interaction.followUp({
+                content: "⚠ コマンド実行中にエラーが発生しました。",
+                ephemeral: true
+              });
+            } else {
+              await interaction.reply({
+                content: "⚠ コマンド実行中にエラーが発生しました。",
+                ephemeral: true
+              });
+            }
+          } catch (e) {
+            console.error("❌ 二重応答エラー:", e);
           }
         }
       }
