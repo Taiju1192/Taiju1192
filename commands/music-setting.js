@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -6,22 +6,30 @@ module.exports = {
     .setDescription("音楽再生の設定を変更します"),
 
   async execute(interaction) {
-    const embed = new EmbedBuilder()
-      .setTitle("🎚 音楽設定メニュー")
-      .setDescription("以下から設定を選んでください。")
-      .setColor("Purple");
+    try {
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId("music_settings")
+        .setPlaceholder("オプションを選択してください")
+        .addOptions([
+          { label: "音量を変更", value: "volume", emoji: "🔊" },
+          { label: "リピート切替", value: "repeat", emoji: "🔁" },
+          { label: "キューをシャッフル", value: "shuffle", emoji: "🔀" },
+        ]);
 
-    const menu = new StringSelectMenuBuilder()
-      .setCustomId("music_settings")
-      .setPlaceholder("設定を選択")
-      .addOptions([
-        { label: "音量調整", value: "volume" },
-        { label: "リピート再生 ON/OFF", value: "repeat" },
-        { label: "スピード調整", value: "speed" },
-        { label: "シャッフル再生 ON/OFF", value: "shuffle" }
-      ]);
+      const row = new ActionRowBuilder().addComponents(menu);
 
-    const row = new ActionRowBuilder().addComponents(menu);
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true }); // 👈 必要なら ephemeral に
+      await interaction.reply({
+        content: "🎵 設定を選択してください：",
+        components: [row],
+        ephemeral: true
+      });
+    } catch (err) {
+      console.error("❌ music-setting.js エラー:", err);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: "⚠ エラーが発生しました。", ephemeral: true });
+      } else {
+        await interaction.reply({ content: "⚠ エラーが発生しました。", ephemeral: true });
+      }
+    }
   }
 };
