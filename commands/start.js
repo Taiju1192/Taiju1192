@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   StringSelectMenuBuilder
 } = require("discord.js");
+
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -93,8 +94,19 @@ async function playNext(guildId, firstTrack = null) {
 
   try {
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
+
+    // ✅ 音量設定を反映
+    if (playerData.volume && resource.volume) {
+      resource.volume.setVolume(playerData.volume);
+    }
+
     playerData.player.play(resource);
     playerData.currentAudioPath = audioPath;
+
+    // ✅ リピート処理（再度末尾に追加）
+    if (playerData.repeat) {
+      playerData.queue.push(nextTrack);
+    }
 
     await playerData.textChannel.send(`🎶 再生中: **${nextTrack.title}**`);
   } catch (err) {
@@ -134,7 +146,7 @@ module.exports = {
     }
 
     try {
-      await interaction.deferReply(); // ✅ 3秒以内に必ず応答確保
+      await interaction.deferReply();
 
       const query = interaction.options.getString("query");
       let selectedTrack = null;
@@ -147,7 +159,6 @@ module.exports = {
           };
         } else {
           const matchedTracks = findTracksByKeyword(query);
-
           if (matchedTracks.length === 0) {
             return interaction.editReply(`⚠️ キーワード「${query}」に一致する曲は見つかりませんでした。`);
           } else if (matchedTracks.length === 1) {
@@ -172,7 +183,6 @@ module.exports = {
             await interaction.editReply({ embeds: [embed], components: [row] });
 
             const filter = i => i.customId === "selectTrack" && i.user.id === interaction.user.id;
-
             try {
               const selectInteraction = await interaction.channel.awaitMessageComponent({ filter, time: 60000 });
               const index = parseInt(selectInteraction.values[0], 10);
@@ -204,7 +214,6 @@ module.exports = {
       });
 
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-
       const player = createAudioPlayer();
 
       player.on(AudioPlayerStatus.Idle, async () => {
@@ -230,6 +239,7 @@ module.exports = {
 
       connection.subscribe(player);
 
+      // ✅ 初期設定に volume と repeat を追加（重要！）
       activePlayers.set(guildId, {
         connection,
         player,
@@ -237,7 +247,9 @@ module.exports = {
         currentTrack: null,
         currentAudioPath: null,
         interaction,
-        textChannel: interaction.channel
+        textChannel: interaction.channel,
+        volume: 1.0,       // ✅ 初期音量
+        repeat: false      // ✅ 初期リピート設定
       });
 
       await playNext(guildId, selectedTrack);
