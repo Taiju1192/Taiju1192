@@ -6,12 +6,13 @@ const {
   ActionRowBuilder
 } = require("discord.js");
 const { evaluate } = require("mathjs");
+const activePlayers = require("../activePlayers");
 
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     try {
-      // ✅ 計算系（/calculator）
+      // ✅ 電卓セレクトメニュー
       if (interaction.isStringSelectMenu() && interaction.customId === "calc_menu") {
         const modal = new ModalBuilder()
           .setCustomId("calculator_modal")
@@ -27,13 +28,17 @@ module.exports = {
         modal.addComponents(row);
 
         try {
-          await interaction.showModal(modal);
+          // モーダル表示は未応答状態でのみ
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.showModal(modal);
+          }
         } catch (err) {
-          console.error("❌ モーダル表示失敗:", err);
+          console.error("❌ モーダル表示に失敗:", err);
         }
         return;
       }
 
+      // ✅ 電卓モーダル送信
       if (interaction.isModalSubmit() && interaction.customId === "calculator_modal") {
         const expression = interaction.fields.getTextInputValue("expression_input");
         try {
@@ -51,10 +56,10 @@ module.exports = {
         return;
       }
 
-      // ✅ 音楽設定メニュー
+      // ✅ 音楽設定メニュー選択
       if (interaction.isStringSelectMenu() && interaction.customId === "music_settings") {
         const selected = interaction.values[0];
-        const playerData = interaction.client.activePlayers?.get(interaction.guildId);
+        const playerData = activePlayers.get(interaction.guildId);
 
         if (selected === "volume") {
           const modal = new ModalBuilder()
@@ -72,7 +77,9 @@ module.exports = {
           modal.addComponents(row);
 
           try {
-            await interaction.showModal(modal);
+            if (!interaction.replied && !interaction.deferred) {
+              await interaction.showModal(modal);
+            }
           } catch (err) {
             console.error("❌ モーダル表示に失敗:", err);
           }
@@ -92,7 +99,7 @@ module.exports = {
         }
 
         if (selected === "shuffle") {
-          if (!playerData || playerData.queue.length === 0) {
+          if (!playerData || !Array.isArray(playerData.queue) || playerData.queue.length === 0) {
             return interaction.reply({ content: "⚠ シャッフル対象がありません。", ephemeral: true });
           }
 
@@ -103,7 +110,7 @@ module.exports = {
         return interaction.reply({ content: "⚠ 不明な選択肢です。", ephemeral: true });
       }
 
-      // ✅ 音量モーダルの処理
+      // ✅ 音量モーダル送信
       if (interaction.isModalSubmit() && interaction.customId === "set_volume_modal") {
         const input = interaction.fields.getTextInputValue("volume_input");
         const volume = parseFloat(input);
@@ -115,7 +122,7 @@ module.exports = {
           });
         }
 
-        const playerData = interaction.client.activePlayers?.get(interaction.guildId);
+        const playerData = activePlayers.get(interaction.guildId);
         if (!playerData || !playerData.player || !playerData.player.state.resource) {
           return interaction.reply({
             content: "⚠ 現在再生中の曲がありません。",
@@ -158,8 +165,10 @@ module.exports = {
           }
         }
       }
+
     } catch (err) {
       console.error("❌ interactionCreate.js 内部エラー:", err);
     }
   }
 };
+
