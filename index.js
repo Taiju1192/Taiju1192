@@ -34,6 +34,8 @@ const client = new Client({
     Partials.User
   ]
 });
+// ✅ activePlayers をグローバルに
+client.activePlayers = require("./activePlayers");
 
 // ✅ コマンド読み込み準備
 client.commands = new Collection();
