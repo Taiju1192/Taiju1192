@@ -11,7 +11,7 @@ module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     try {
-      // ✅ セレクトメニュー: /calculator のジャンル選択
+      // ✅ /calculator のセレクトメニュー
       if (interaction.isStringSelectMenu() && interaction.customId === "calc_menu") {
         const modal = new ModalBuilder()
           .setCustomId("calculator_modal")
@@ -30,36 +30,97 @@ module.exports = {
         return;
       }
 
-      // ✅ モーダルが送信された → 数式を評価
+      // ✅ 計算モーダルの処理
       if (interaction.isModalSubmit() && interaction.customId === "calculator_modal") {
         const expression = interaction.fields.getTextInputValue("expression_input");
         try {
           const result = evaluate(expression);
           await interaction.reply({
             content: `✅ \`${expression}\` の結果は \`${result}\` です。`,
-            flags: 64
+            ephemeral: true
           });
         } catch (err) {
           await interaction.reply({
             content: "❌ 数式が無効です。例: `1/2 + 3/4`",
-            flags: 64
+            ephemeral: true
           });
         }
         return;
       }
 
-      // ✅ その他のセレクトメニュー（例: music-setting）
+      // ✅ 音楽設定メニューの処理
       if (interaction.isStringSelectMenu() && interaction.customId === "music_settings") {
-        const map = {
-          volume: "🔊 音量調整を選択しました。",
-          repeat: "🔁 リピート再生の切り替えを行います。",
-          speed: "⏩ スピード調整のオプションが選ばれました。",
-          shuffle: "🔀 シャッフル再生の設定を変更します。"
-        };
+        const selected = interaction.values[0];
+        const playerData = interaction.client.activePlayers?.get(interaction.guildId);
 
-        const response = map[interaction.values[0]] || "⚠ 不明なオプションです。";
-        await interaction.reply({ content: response, flags: 64 });
-        return;
+        if (selected === "volume") {
+          const modal = new ModalBuilder()
+            .setCustomId("set_volume_modal")
+            .setTitle("🔊 音量調整");
+
+          const input = new TextInputBuilder()
+            .setCustomId("volume_input")
+            .setLabel("0.1（最小）〜 2.0（最大）")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder("例: 0.5")
+            .setRequired(true);
+
+          const row = new ActionRowBuilder().addComponents(input);
+          modal.addComponents(row);
+          return interaction.showModal(modal);
+        }
+
+        if (selected === "repeat") {
+          if (!playerData) {
+            return interaction.reply({ content: "⚠ 再生中の曲がありません。", ephemeral: true });
+          }
+
+          playerData.repeat = !playerData.repeat;
+          return interaction.reply({
+            content: playerData.repeat ? "🔁 リピートを有効にしました。" : "🔁 リピートを無効にしました。",
+            ephemeral: true
+          });
+        }
+
+        if (selected === "shuffle") {
+          if (!playerData || playerData.queue.length === 0) {
+            return interaction.reply({ content: "⚠ シャッフルする曲がありません。", ephemeral: true });
+          }
+
+          playerData.queue.sort(() => Math.random() - 0.5);
+          return interaction.reply({ content: "🔀 再生キューをシャッフルしました。", ephemeral: true });
+        }
+
+        return interaction.reply({ content: "⚠ 不明なオプションです。", ephemeral: true });
+      }
+
+      // ✅ 音量モーダルの処理
+      if (interaction.isModalSubmit() && interaction.customId === "set_volume_modal") {
+        const input = interaction.fields.getTextInputValue("volume_input");
+        const volume = parseFloat(input);
+
+        if (isNaN(volume) || volume <= 0 || volume > 2) {
+          return interaction.reply({
+            content: "❌ 無効な音量です。0.1〜2.0 の数値を入力してください。",
+            ephemeral: true
+          });
+        }
+
+        const playerData = interaction.client.activePlayers?.get(interaction.guildId);
+        if (!playerData || !playerData.player || !playerData.player.state.resource) {
+          return interaction.reply({
+            content: "⚠ 現在再生中の曲がありません。",
+            ephemeral: true
+          });
+        }
+
+        playerData.player.state.resource.volume?.setVolume(volume);
+        playerData.volume = volume;
+
+        return interaction.reply({
+          content: `🔊 音量を \`${volume}\` に設定しました。`,
+          ephemeral: true
+        });
       }
 
       // ✅ スラッシュコマンド
@@ -74,12 +135,12 @@ module.exports = {
           if (interaction.replied || interaction.deferred) {
             await interaction.followUp({
               content: "⚠ コマンド実行中にエラーが発生しました。",
-              flags: 64
+              ephemeral: true
             });
           } else {
             await interaction.reply({
               content: "⚠ コマンド実行中にエラーが発生しました。",
-              flags: 64
+              ephemeral: true
             });
           }
         }
