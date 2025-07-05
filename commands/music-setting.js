@@ -11,7 +11,7 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // ✅ 応答予約（3秒ルール対策）
+      // ✅ 3秒ルール対策：即 deferReply
       await interaction.deferReply({ ephemeral: true });
 
       const menu = new StringSelectMenuBuilder()
