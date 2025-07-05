@@ -7,8 +7,9 @@ module.exports = {
     .setDescription("英単語の意味を当てよう！"),
 
   async execute(interaction) {
+    await interaction.deferReply(); // ✅ 最初に必ず応答予約
+
     try {
-      // お好みで単語を追加可能！
       const wordList = [
         "serendipity",
         "benevolent",
@@ -20,20 +21,23 @@ module.exports = {
       ];
 
       const word = wordList[Math.floor(Math.random() * wordList.length)];
-
       const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
       const data = await res.json();
 
       const meaning = data?.[0]?.meanings?.[0]?.definitions?.[0]?.definition;
+      if (!meaning) throw new Error("意味取得失敗");
 
-      if (!meaning) {
-        throw new Error("意味の取得に失敗しました");
-      }
+      // ✅ editReply に変更する
+      await interaction.editReply(`🧠 **${word}** の意味は？\n||${meaning}||`);
 
-      await interaction.reply(`🧠 **${word}** の意味は？\n||${meaning}||`);
     } catch (err) {
       console.error("❌ word-quiz エラー:", err);
-      await interaction.reply("⚠️ 単語の取得に失敗しました。もう一度試してみてください。");
+
+      if (interaction.deferred && !interaction.replied) {
+        await interaction.editReply("⚠️ 単語の取得に失敗しました。");
+      } else {
+        console.warn("❌ 二重応答回避: 応答済みでした");
+      }
     }
   }
 };
