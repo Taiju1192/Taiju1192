@@ -6,7 +6,6 @@ module.exports = {
   name: "google-reaction",
 
   async handle(message, client) {
-    // 「○○とは」という形式のメッセージを検出
     const match = message.content.match(/(.+?)とは/);
     if (!match) return;
 
@@ -16,21 +15,24 @@ module.exports = {
     console.log(`💡 「${query}とは」を検出しました`);
 
     try {
-      // 🔍 リアクション追加
       const reaction = await message.react(emoji);
       console.log("🔍 リアクションを追加しました");
 
-      // リアクションの収集を開始（他ユーザーの反応を待つ）
       const collector = message.createReactionCollector({
         filter: (reaction, user) => reaction.emoji.name === emoji && !user.bot,
         max: 1,
-        time: 30000 // 30秒でタイムアウト
+        time: 30000
       });
 
-      collector.on('collect', async (reaction, user) => {
+      collector.on('end', async (collected, reason) => {
+        if (collected.size === 0) {
+          console.log("⏰ タイムアウト: リアクションされませんでした");
+          return;
+        }
+
+        const user = collected.first().users.cache.filter(u => !u.bot).first();
         console.log(`✅ ${user.tag} がリアクションしました`);
 
-        // Googleで検索
         const results = await googleSearch(query);
 
         if (!results || results.length === 0) {
@@ -38,22 +40,19 @@ module.exports = {
           return message.reply("検索結果が見つかりませんでした。");
         }
 
-        const first = results[0];
+        // 上位3件まで取得（最大3）
+        const topResults = results.slice(0, 3);
 
-        const embed = new EmbedBuilder()
-          .setTitle(first.title)
-          .setURL(first.link)
-          .setDescription(first.snippet || "説明はありません。")
-          .setColor(0x4285F4)
-          .setFooter({ text: `検索ワード: ${query}` });
+        const embeds = topResults.map((result, i) => {
+          return new EmbedBuilder()
+            .setTitle(`🔗 ${result.title}`)
+            .setURL(result.link)
+            .setDescription(result.snippet || "説明はありません。")
+            .setColor(0x4285F4)
+            .setFooter({ text: `検索ワード: ${query}｜${i + 1}件目` });
+        });
 
-        message.reply({ embeds: [embed] });
-      });
-
-      collector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-          console.log("⏰ タイムアウト: リアクションされませんでした");
-        }
+        message.reply({ embeds });
       });
 
     } catch (err) {
@@ -63,11 +62,13 @@ module.exports = {
   }
 };
 
-// 🔍 Google検索関数
+// 🔍 Google検索関数（日本語限定）
 async function googleSearch(query) {
   const apiKey = process.env.GOOGLE_API_KEY;
   const cx = process.env.GOOGLE_CSE_ID;
-  const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${apiKey}&cx=${cx}`;
+
+  // 🌐 日本の検索結果に限定（gl: 国、lr: 言語）
+  const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${apiKey}&cx=${cx}&gl=jp&lr=lang_ja`;
 
   console.log(`🌐 Google検索API 呼び出しURL:\n${url}`);
 
