@@ -22,19 +22,20 @@ module.exports = {
       if (!meaningEn) throw new Error("英語の意味取得に失敗");
 
       // LibreTranslate で日本語に翻訳（無料API）
-      const translated = await fetch("https://libretranslate.de/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          q: meaningEn,
-          source: "en",
-          target: "ja",
-          format: "text"
-        })
-      });
+      const translated = await fetch("https://translate.astian.org/translate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    q: meaningEn,
+    source: "en",
+    target: "ja",
+    format: "text"
+  })
+});
 
-      const result = await translated.json();
-      const meaningJa = result?.translatedText || "翻訳できませんでした。";
+const result = await translated.json();
+const meaningJa = result?.translatedText || "翻訳できませんでした。";
+
 
       await interaction.editReply(`🧠 **${word}** の意味は何？\n||${meaningJa}||`);
 
