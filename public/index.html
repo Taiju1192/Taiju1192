@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>音楽プレイヤー（完全版）</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156" />
+  <link rel="apple-touch-icon" href="https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156" />
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul>
+      <li>
+        <strong>
+          🎧 音楽プレイヤー
+          <span id="clock" style="margin-left: 1rem; font-size: 0.9rem; font-weight: normal;">🕒 読み込み中...</span>
+        </strong>
+      </li>
+    </ul>
+    <ul>
+      <li><a href="#">ホーム</a></li>
+      <li><a href="#" role="button" id="settingsButton">設定</a></li>
+      <li><a href="#" role="button" id="requestButton">リクエスト</a></li>
+    </ul>
+  </nav>
+  <!-- 🎵 なめらかスクロール表示 -->
+<div id="scrollingTitleWrapper">
+  <div id="scrollingTitle">🎵 Now Playing: </div>
+</div>
+  <main class="container">
+    <div class="grid">
+      <section>
+        <hgroup>
+          <h2>プレイヤー</h2>
+          <h3>全曲確実に再生！</h3>
+        </hgroup>
+
+        <audio id="player" controls></audio>
+
+        <div id="now-next">
+          <p><strong>🎵 再生中:</strong> <span id="nowPlaying">---</span></p>
+          <p><strong>⏭️ 次の曲:</strong> <span id="nextTrack">---</span></p>
+        </div>
+
+        <div class="controls">
+          <button id="skip">⏭️ 次の曲</button>
+          <button id="shuffle">🔀 シャッフル</button>
+          <button id="playMode" class="play-mode">🔁 順番再生</button>
+          <button id="repeatOneBtn">🔂 リピート1曲</button>
+          <input type="range" id="seek" value="0" min="0" max="100" />
+        </div>
+
+        <input type="text" id="search" placeholder="曲名を検索..." aria-label="曲名検索" />
+        <ul id="tracklist" class="tracklist"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- 🎛 設定パネル -->
+  <div id="floatingSettings" class="request-float hidden">
+    <h2>🎛 設定</h2>
+    <label>音量:
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+    </label>
+    <label>再生速度:
+      <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1">
+    </label>
+    <span id="speedLabel">速度: 1x</span><br>
+    <button id="muteBtn">🔈 ミュート</button>
+  </div>
+
+  <!-- 🎵 フローティングリクエストフォーム -->
+  <div id="floatingRequest" class="request-float hidden">
+    <h2>曲のリクエスト</h2>
+    <form id="requestForm">
+      <input type="text" id="requestTitle" placeholder="曲名を入力" required />
+      <button type="submit">送信</button>
+    </form>
+    <h3>リクエスト一覧</h3>
+    <ul id="requestList"></ul>
+  </div>
+
+  <footer class="container">
+    <small><a href="#">© 2025 音楽サイト</a> • <a href="#">プライバシー</a></small>
+  </footer>
+
+  <script src="tracks.js"></script>
+  <script src="script.js"></script>
+
+  <!-- ✅ 年月日時分秒表示の時計修正 -->
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const japanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+
+      const year = japanTime.getUTCFullYear();
+      const month = String(japanTime.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(japanTime.getUTCDate()).padStart(2, '0');
+      const hours = String(japanTime.getUTCHours()).padStart(2, '0');
+      const minutes = String(japanTime.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(japanTime.getUTCSeconds()).padStart(2, '0');
+
+      const timeString = `🕒 ${year}年${month}月${day}日 ${hours}時${minutes}分${seconds}秒`;
+      const clockElement = document.getElementById("clock");
+      if (clockElement) {
+        clockElement.textContent = timeString;
+      }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
