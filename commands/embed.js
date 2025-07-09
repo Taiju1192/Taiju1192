@@ -1,4 +1,11 @@
-const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  PermissionFlagsBits
+} = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -27,6 +34,6 @@ module.exports = {
     const row2 = new ActionRowBuilder().addComponents(descInput);
 
     modal.addComponents(row1, row2);
-    await interaction.showModal(modal);
+    await interaction.showModal(modal); // ❗ここで返信完了、これ以上 interaction.reply しないこと
   }
 };
