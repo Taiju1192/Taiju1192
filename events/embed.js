@@ -1,4 +1,3 @@
-// events/embed.js
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
