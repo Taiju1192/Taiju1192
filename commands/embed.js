@@ -18,10 +18,6 @@ try {
 const modal = new ModalBuilder()
 .setCustomId('custom-embed-modal')
 .setTitle('📢 Embed 作成フォーム');
-
-javascript
-コピーする
-編集する
   const titleInput = new TextInputBuilder()
     .setCustomId('embed-title')
     .setLabel('タイトル（必須）')
