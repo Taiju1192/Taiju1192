@@ -1,45 +1,32 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionFlagsBits
-} = require("discord.js");
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("embed")
-    .setDescription("カスタム埋め込みメッセージを送信します")
-    .addStringOption(option =>
-      option
-        .setName("title")
-        .setDescription("埋め込みのタイトル")
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName("description")
-        .setDescription("埋め込みの本文（説明）")
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName("color")
-        .setDescription("色コードまたは名前（例: Blue, Red, #ff0000）")
-        .setRequired(false)
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages), // 管理者権限推奨
+    .setName('embed')
+    .setDescription('フォームでEmbedを作成')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
-    const title = interaction.options.getString("title");
-    const description = interaction.options.getString("description");
-    const color = interaction.options.getString("color") || "Random";
+    const modal = new ModalBuilder()
+      .setCustomId('custom-embed-modal')
+      .setTitle('📢 Embed 作成フォーム');
 
-    const embed = new EmbedBuilder()
-      .setTitle(title)
-      .setDescription(description)
-      .setColor(color)
-      .setFooter({ text: `送信者: ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
-      .setTimestamp();
+    const titleInput = new TextInputBuilder()
+      .setCustomId('embed-title')
+      .setLabel('タイトル（必須）')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-    await interaction.reply({ embeds: [embed] });
+    const descInput = new TextInputBuilder()
+      .setCustomId('embed-description')
+      .setLabel('説明（省略可）')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false);
+
+    const row1 = new ActionRowBuilder().addComponents(titleInput);
+    const row2 = new ActionRowBuilder().addComponents(descInput);
+
+    modal.addComponents(row1, row2);
+    await interaction.showModal(modal);
   }
 };
