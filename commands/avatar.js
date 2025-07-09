@@ -27,11 +27,11 @@ javascript
   await interaction.reply({ embeds: [embed] });
 } catch (error) {
   console.error('❌ avatarコマンドでエラー:', error);
-  // すでに応答されている場合は reply しない
+
   if (!interaction.replied && !interaction.deferred) {
     await interaction.reply({
-      content: '⚠️ エラーが発生しました',
-      ephemeral: true
+      content: '⚠️ アバター表示中にエラーが発生しました。',
+      flags: 1 << 6 // ephemeral
     });
   }
 }
