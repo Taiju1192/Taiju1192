@@ -7,11 +7,11 @@ module.exports = {
     .addUserOption(opt =>
       opt.setName('ユーザー')
         .setDescription('表示したいユーザー')
-        .setRequired(false)),
+        .setRequired(false)
+    ),
 
   async execute(interaction) {
     const user = interaction.options.getUser('ユーザー') || interaction.user;
-
     const avatarURL = user.displayAvatarURL({ dynamic: true, size: 512 });
 
     const embed = new EmbedBuilder()
