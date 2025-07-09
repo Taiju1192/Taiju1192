@@ -14,10 +14,6 @@ async execute(interaction) {
 try {
 const user = interaction.options.getUser('ユーザー') || interaction.user;
 const avatarURL = user.displayAvatarURL({ dynamic: true, size: 512 });
-
-javascript
-コピーする
-編集する
   const embed = new EmbedBuilder()
     .setTitle('🖼️ アバター表示')
     .setImage(avatarURL)
