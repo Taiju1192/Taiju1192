@@ -19,7 +19,7 @@ const modal = new ModalBuilder()
 .setCustomId('custom-embed-modal')
 .setTitle('📢 Embed 作成フォーム');
 
-go
+javascript
 コピーする
 編集する
   const titleInput = new TextInputBuilder()
@@ -38,11 +38,16 @@ go
   const row2 = new ActionRowBuilder().addComponents(descInput);
 
   modal.addComponents(row1, row2);
-
-  // 3秒以内にモーダル表示で応答完了とする
   await interaction.showModal(modal);
 } catch (error) {
   console.error('❌ /embed エラー:', error);
+
+  if (!interaction.replied && !interaction.deferred) {
+    await interaction.reply({
+      content: '⚠️ モーダルの表示中にエラーが発生しました。',
+      flags: 1 << 6
+    });
+  }
 }
 }
 };
