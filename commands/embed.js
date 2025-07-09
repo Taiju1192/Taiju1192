@@ -1,49 +1,45 @@
-const {
-SlashCommandBuilder,
-ModalBuilder,
-TextInputBuilder,
-TextInputStyle,
-ActionRowBuilder,
-PermissionFlagsBits
-} = require('discord.js');
+// commands/embed.js
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-data: new SlashCommandBuilder()
-.setName('embed')
-.setDescription('フォームで埋め込みを作成')
-.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  data: new SlashCommandBuilder()
+    .setName('embed')
+    .setDescription('カスタム埋め込みメッセージを送信'),
 
-async execute(interaction) {
-try {
-const modal = new ModalBuilder()
-.setCustomId('custom-embed-modal')
-.setTitle('📢 Embed 作成フォーム');
-  const titleInput = new TextInputBuilder()
-    .setCustomId('embed-title')
-    .setLabel('タイトル（必須）')
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+  async execute(interaction) {
+    try {
+      const modal = new ModalBuilder()
+        .setCustomId('custom-embed-modal')
+        .setTitle('📝 埋め込みメッセージ作成');
 
-  const descInput = new TextInputBuilder()
-    .setCustomId('embed-description')
-    .setLabel('説明（省略可）')
-    .setStyle(TextInputStyle.Paragraph)
-    .setRequired(false);
+      const titleInput = new TextInputBuilder()
+        .setCustomId('embed-title')
+        .setLabel('タイトル（必須）')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
 
-  const row1 = new ActionRowBuilder().addComponents(titleInput);
-  const row2 = new ActionRowBuilder().addComponents(descInput);
+      const descInput = new TextInputBuilder()
+        .setCustomId('embed-description')
+        .setLabel('説明文（任意）')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
 
-  modal.addComponents(row1, row2);
-  await interaction.showModal(modal);
-} catch (error) {
-  console.error('❌ /embed エラー:', error);
+      const row1 = new ActionRowBuilder().addComponents(titleInput);
+      const row2 = new ActionRowBuilder().addComponents(descInput);
 
-  if (!interaction.replied && !interaction.deferred) {
-    await interaction.reply({
-      content: '⚠️ モーダルの表示中にエラーが発生しました。',
-      flags: 1 << 6
-    });
+      modal.addComponents(row1, row2);
+
+      await interaction.showModal(modal);
+
+    } catch (error) {
+      console.error('❌ /embed エラー:', error);
+
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '⚠️ 埋め込み送信中にエラーが発生しました。',
+          flags: 1 << 6
+        });
+      }
+    }
   }
-}
-}
 };
