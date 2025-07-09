@@ -43,7 +43,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle(title)
-      .setDescription(`${description}\n\n\`\`\`\n付与ロール: ${role.name}\n\`\`\``)
+      .setDescription(`${description}\n\n\`\`\`\n付与ロール ${role.name}\n\`\`\``)
       .setColor(0x2ecc71);
 
     const button = new ButtonBuilder()
