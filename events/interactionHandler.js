@@ -2,7 +2,9 @@ const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
   name: 'interactionCreate',
-  async execute(interaction, client) {
+  async execute(interaction) {
+    const client = interaction.client; // 👈 ここが重要！
+
     // ✅ スラッシュコマンド処理
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
@@ -23,6 +25,7 @@ module.exports = {
         });
       }
     }
+
 
     // ✅ ボタンインタラクション（verify-role-xxx）
     else if (interaction.isButton() && interaction.customId.startsWith('verify-role-')) {
