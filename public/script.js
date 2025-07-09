@@ -16,8 +16,8 @@ const muteBtn = document.getElementById("muteBtn");
 const speedLabel = document.getElementById("speedLabel");
 
 let currentTrack = 0;
-let nextTrack = 1; // 次に流す曲を事前に確定
-let playMode = "sequential"; // "sequential" or "random"
+let nextTrack = 1;
+let playMode = "sequential";
 let repeatOne = false;
 let shuffledPlaylist = [];
 let recentlyPlayed = [];
@@ -33,23 +33,18 @@ function createShuffledPlaylist() {
 }
 
 function getRandomTrackWithHistory() {
-  if (recentlyPlayed.length >= tracks.length) {
-    recentlyPlayed = [];
-  }
+  if (recentlyPlayed.length >= tracks.length) recentlyPlayed = [];
   const availableTracks = tracks.map((_, i) => i).filter(i => !recentlyPlayed.includes(i));
   if (availableTracks.length === 0) {
     recentlyPlayed.shift();
     return getRandomTrackWithHistory();
   }
-  const randomIndex = Math.floor(Math.random() * availableTracks.length);
-  return availableTracks[randomIndex];
+  return availableTracks[Math.floor(Math.random() * availableTracks.length)];
 }
 
 function addToRecentlyPlayed(index) {
   const existingIndex = recentlyPlayed.indexOf(index);
-  if (existingIndex > -1) {
-    recentlyPlayed.splice(existingIndex, 1);
-  }
+  if (existingIndex > -1) recentlyPlayed.splice(existingIndex, 1);
   recentlyPlayed.unshift(index);
   if (recentlyPlayed.length > RECENT_HISTORY_SIZE) {
     recentlyPlayed = recentlyPlayed.slice(0, RECENT_HISTORY_SIZE);
@@ -57,16 +52,7 @@ function addToRecentlyPlayed(index) {
 }
 
 function determineNextTrack() {
-  if (repeatOne) {
-    nextTrack = currentTrack;
-    return;
-  }
-  
-  if (playMode === "random") {
-    nextTrack = getRandomTrackWithHistory();
-  } else {
-    nextTrack = (currentTrack + 1) % tracks.length;
-  }
+  nextTrack = repeatOne ? currentTrack : (playMode === "random" ? getRandomTrackWithHistory() : (currentTrack + 1) % tracks.length);
 }
 
 function updateNowNextDisplay() {
@@ -80,21 +66,22 @@ function loadTrack(index) {
   player.play();
   highlightCurrentTrack();
   addToRecentlyPlayed(index);
-  
-  // 次の曲を確定してから表示を更新
   determineNextTrack();
   updateNowNextDisplay();
-  
-// ✅ スクロールする再生中タイトルの更新
-updateScrollingTitle(tracks[index].title);
-startTitleScroll(tracks[index].title); // ✅ タブタイトルもスクロール
-
+  updateScrollingTitle(tracks[index].title);
+  startTitleScroll(tracks[index].title);
   if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: tracks[index].title,
       artist: "曲追加リクエストはこちらへ DISCORD_ID：taiju_5662",
       album: "プレイリスト",
-      artwork: [{ src: "https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156", sizes: "300x300", type: "image/png" }]
+      artwork: [
+        {
+          src: "https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156",
+          sizes: "300x300",
+          type: "image/png"
+        }
+      ]
     });
   }
 }
@@ -141,11 +128,8 @@ function playRandomTrack() {
 repeatOneBtn.addEventListener("click", () => {
   repeatOne = !repeatOne;
   repeatOneBtn.textContent = repeatOne ? "🔂 リピート中" : "🔂 リピート1曲";
-  
-  // リピート設定変更時に次の曲を再確定
   determineNextTrack();
   updateNowNextDisplay();
-  
   alert(repeatOne ? "リピートモードON" : "リピートモードOFF");
 });
 
@@ -153,10 +137,9 @@ player.addEventListener("ended", () => {
   if (repeatOne) {
     player.currentTime = 0;
     player.play();
-    return;
+  } else {
+    loadTrack(nextTrack);
   }
-  // 事前に確定していた次の曲を再生
-  loadTrack(nextTrack);
 });
 
 seek.addEventListener("input", () => {
@@ -172,7 +155,6 @@ player.addEventListener("timeupdate", () => {
 });
 
 skipBtn.addEventListener("click", () => {
-  // 事前に確定していた次の曲を再生
   loadTrack(nextTrack);
 });
 
@@ -187,12 +169,9 @@ shuffleBtn.addEventListener("click", () => {
 playModeBtn.addEventListener("click", () => {
   playMode = playMode === "sequential" ? "random" : "sequential";
   recentlyPlayed = [];
-  
-  // 再生モード変更時に次の曲を再確定
   determineNextTrack();
   updateNowNextDisplay();
   updatePlayModeButton();
-  
   alert(playMode === "random" ? "ランダム再生モードに切り替えました！" : "順番再生モードに切り替えました！");
 });
 
@@ -228,26 +207,24 @@ settingsButton.addEventListener("click", (e) => {
   floatingSettings.classList.remove("hidden");
   setTimeout(() => floatingSettings.classList.add("show"), 10);
 });
+
 document.addEventListener("click", (e) => {
-  if (
-    floatingSettings.classList.contains("show") &&
-    !floatingSettings.contains(e.target) &&
-    e.target !== settingsButton
-  ) {
+  if (floatingSettings.classList.contains("show") && !floatingSettings.contains(e.target) && e.target !== settingsButton) {
     floatingSettings.classList.remove("show");
     setTimeout(() => floatingSettings.classList.add("hidden"), 500);
   }
 });
 
-// 🎚 音量・速度・ミュート
 volumeSlider.addEventListener("input", () => {
   player.volume = parseFloat(volumeSlider.value);
 });
+
 speedSlider.addEventListener("input", () => {
   const speed = parseFloat(speedSlider.value);
   player.playbackRate = speed;
   speedLabel.textContent = `速度: ${speed.toFixed(1)}x`;
 });
+
 muteBtn.addEventListener("click", () => {
   player.muted = !player.muted;
   muteBtn.textContent = player.muted ? "🔇 ミュート解除" : "🔈 ミュート";
@@ -267,11 +244,7 @@ requestButton.addEventListener("click", (e) => {
 });
 
 document.addEventListener("click", (e) => {
-  if (
-    floatingRequest.classList.contains("show") &&
-    !floatingRequest.contains(e.target) &&
-    e.target !== requestButton
-  ) {
+  if (floatingRequest.classList.contains("show") && !floatingRequest.contains(e.target) && e.target !== requestButton) {
     floatingRequest.classList.remove("show");
     setTimeout(() => floatingRequest.classList.add("hidden"), 500);
   }
@@ -281,13 +254,11 @@ requestForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = requestTitle.value.trim();
   if (!title) return;
-
   await fetch("/api/request", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title }),
   });
-
   requestTitle.value = "";
   loadRequests();
 });
@@ -299,56 +270,22 @@ async function loadRequests() {
   data.forEach(item => {
     const li = document.createElement("li");
     li.textContent = item.title;
-
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.onclick = async () => {
       const key = prompt("削除キーを入力してください（管理者専用）:");
       if (!key) return;
-
       await fetch("/api/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: item.title, key }),
       });
-
       loadRequests();
     };
-
     li.appendChild(delBtn);
     requestList.appendChild(li);
   });
 }
-
-async function updateClockFromAPI() {
-  try {
-    const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Tokyo");
-    const data = await res.json();
-
-    const date = new Date(data.datetime); // ← 正しい日本時間のDateオブジェクト
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    const timeString = `🕒 ${year}年${month}月${day}日 ${hours}時${minutes}分${seconds}秒`;
-
-    const clockElement = document.getElementById("clock");
-    if (clockElement && clockElement.textContent !== timeString) {
-      clockElement.textContent = timeString;
-    }
-  } catch (e) {
-    console.error("日本時刻の取得に失敗しました:", e);
-  }
-}
-
-
-setInterval(updateClockFromAPI, 1000);
-updateClockFromAPI();
-
 
 let scrollTitleInterval;
 let titleBase = "🎵 Now Playing: ";
@@ -359,30 +296,23 @@ function startTitleScroll(trackTitle) {
   titleBase = `🎵 Now Playing: ${trackTitle} — `;
   currentTitleScroll = titleBase + " ";
   scrollIndex = 0;
-
   if (scrollTitleInterval) clearInterval(scrollTitleInterval);
-
   scrollTitleInterval = setInterval(() => {
-    document.title =
-      currentTitleScroll.substring(scrollIndex) + currentTitleScroll.substring(0, scrollIndex);
+    document.title = currentTitleScroll.substring(scrollIndex) + currentTitleScroll.substring(0, scrollIndex);
     scrollIndex = (scrollIndex + 1) % currentTitleScroll.length;
-  }, 100); // スクロール速度（ミリ秒）
+  }, 100);
 }
 
 function updateScrollingTitle(trackTitle) {
   const el = document.getElementById("scrollingTitle");
-  if (el) {
-    el.textContent = `🎵 Now Playing: ${trackTitle} — `.repeat(3); // ループ感を出す
-  }
+  if (el) el.textContent = `🎵 Now Playing: ${trackTitle} — `.repeat(3);
 }
-
 
 // 初期化
 createTrackList();
 playMode = "random";
 updatePlayModeButton();
 playRandomTrack();
-// 初期化時も次の曲を確定
 determineNextTrack();
 updateNowNextDisplay();
 loadRequests();
