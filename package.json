@@ -1,11 +1,11 @@
 {
-  "name": "discord-music-bot",
+  "name": "kyoku-bot-web-app",
   "version": "1.0.0",
-  "description": "Discord bot with music support",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
+  "description": "音楽プレイヤー + Discord音楽Bot",
+  "main": "server.js",
+   "scripts": {
+  "start": "concurrently \"node server.js\" \"node index.js\""
+},
   "dependencies": {
     "@discordjs/voice": "^0.18.0",
     "discord.js": "^14.15.0",
@@ -15,9 +15,11 @@
     "libsodium-wrappers": "^0.7.15",
     "mathjs": "^11.11.0",
     "node-fetch": "^2.6.9",
-    "opusscript": "^0.0.8"
+    "opusscript": "^0.0.8",
+    "multer": "^2.0.1"
   },
   "engines": {
     "node": "20.x"
-  }
+  },
+  "license": "MIT"
 }
