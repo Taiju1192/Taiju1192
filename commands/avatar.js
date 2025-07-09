@@ -1,35 +1,34 @@
+// commands/avatar.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-data: new SlashCommandBuilder()
-.setName('avatar')
-.setDescription('プロフィール画像を表示')
-.addUserOption(opt =>
-opt.setName('ユーザー')
-.setDescription('表示したいユーザー')
-.setRequired(false)
-),
+  data: new SlashCommandBuilder()
+    .setName('avatar')
+    .setDescription('ユーザーのプロフィール画像を表示')
+    .addUserOption(option =>
+      option.setName('ユーザー').setDescription('表示したいユーザー')),
 
-async execute(interaction) {
-try {
-const user = interaction.options.getUser('ユーザー') || interaction.user;
-const avatarURL = user.displayAvatarURL({ dynamic: true, size: 512 });
-  const embed = new EmbedBuilder()
-    .setTitle('🖼️ アバター表示')
-    .setImage(avatarURL)
-    .setColor(0x7289da)
-    .setFooter({ text: `ユーザー → ${user.tag}` });
+  async execute(interaction) {
+    try {
+      const target = interaction.options.getUser('ユーザー') || interaction.user;
 
-  await interaction.reply({ embeds: [embed] });
-} catch (error) {
-  console.error('❌ avatarコマンドでエラー:', error);
+      const embed = new EmbedBuilder()
+        .setTitle('🖼️ アバター表示')
+        .setColor(0x00bfff)
+        .setImage(target.displayAvatarURL({ size: 512, dynamic: true }))
+        .setFooter({ text: `ユーザー → ${target.tag}` });
 
-  if (!interaction.replied && !interaction.deferred) {
-    await interaction.reply({
-      content: '⚠️ アバター表示中にエラーが発生しました。',
-      flags: 1 << 6 // ephemeral
-    });
+      await interaction.reply({ embeds: [embed] });
+
+    } catch (error) {
+      console.error('❌ avatarコマンドでエラー:', error);
+
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '⚠️ アバター表示中にエラーが発生しました。',
+          flags: 1 << 6 // ephemeral
+        });
+      }
+    }
   }
-}
-}
 };
