@@ -16,7 +16,8 @@
     "mathjs": "^11.11.0",
     "node-fetch": "^2.6.9",
     "opusscript": "^0.0.8",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+  "concurrently": "^8.2.0"
   },
   "engines": {
     "node": "20.x"
