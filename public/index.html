@@ -1,3 +1,4 @@
+<!-- 🎵 音楽プレイヤー HTML - 完全版 with Favorite Only toggle -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,7 +8,6 @@
   <link rel="stylesheet" href="style.css" />
   <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156" />
-  <link rel="apple-touch-icon" href="https://cdn.glitch.global/1a7b0d9f-053a-4c34-817e-4c9c9da5b28a/disc_music_15034-300x300.png?v=1750483913156" />
 </head>
 <body>
   <nav class="container-fluid">
@@ -44,6 +44,7 @@
           <button id="playMode" class="play-mode">🔁 順番再生</button>
           <button id="repeatOneBtn">🔂 リピート1曲</button>
           <input type="range" id="seek" value="0" min="0" max="100" />
+          <!-- ⭐ この下にお気に入り再生モードのボタンが script.js 側から追加されます -->
         </div>
         <input type="text" id="search" placeholder="曲名を検索..." aria-label="曲名検索" />
         <ul id="tracklist" class="tracklist"></ul>
@@ -55,6 +56,7 @@
     </div>
   </main>
 
+  <!-- 🎛 設定パネル -->
   <div id="floatingSettings" class="request-float hidden">
     <h2>🎧 設定</h2>
     <label>音量:
@@ -67,6 +69,7 @@
     <button id="muteBtn">🔈 ミュート</button>
   </div>
 
+  <!-- 🎵 リクエストパネル -->
   <div id="floatingRequest" class="request-float hidden">
     <h2>曲のリクエスト</h2>
     <form id="requestForm">
