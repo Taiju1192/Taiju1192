@@ -164,3 +164,53 @@ input[type="range"] {
     transform: translateX(-100%);
   }
 }
+/* 🌙 ナイトモード対応 */
+.dark-mode body {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+.dark-mode #scrollingTitleWrapper {
+  background-color: #1e1e1e;
+  border-top-color: #333;
+  border-bottom-color: #333;
+}
+
+.dark-mode #scrollingTitle {
+  color: #f5f5f5;
+}
+
+.dark-mode .controls button,
+.dark-mode #shuffle,
+.dark-mode #requestList li,
+.dark-mode .request-float,
+.dark-mode #now-next {
+  background-color: #2c2c2c;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+.dark-mode .request-float,
+.dark-mode #requestList {
+  background-color: #2c2c2c;
+}
+
+.dark-mode input[type="range"] {
+  background-color: #444;
+}
+
+.dark-mode .tracklist li {
+  background-color: #1a1a1a;
+  color: #f5f5f5;
+}
+
+.dark-mode a,
+.dark-mode button {
+  color: #f5f5f5;
+}
+
+.dark-mode footer {
+  background-color: #111;
+  color: #888;
+}
+
