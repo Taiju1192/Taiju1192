@@ -12,13 +12,13 @@
 <body>
   <nav class="container-fluid">
     <ul>
-      <li><strong>🎧 音楽プレイヤー</strong></li>
+      <li><strong>🎷 音楽プレイヤー</strong></li>
     </ul>
     <ul>
       <li><a href="#">ホーム</a></li>
       <li><a href="#" role="button" id="settingsButton">設定</a></li>
       <li><a href="#" role="button" id="requestButton">リクエスト</a></li>
-      <li><a href="#" role="button" id="themeToggle">🌓 ナイトモード</a></li>
+      <li><a href="#" role="button" id="themeToggle">🌃 ナイトモード</a></li>
     </ul>
   </nav>
 
@@ -47,12 +47,16 @@
         </div>
         <input type="text" id="search" placeholder="曲名を検索..." aria-label="曲名検索" />
         <ul id="tracklist" class="tracklist"></ul>
+        <div>
+          <h4>⭐ お気に入りプレイリスト</h4>
+          <ul id="favorites"></ul>
+        </div>
       </section>
     </div>
   </main>
 
   <div id="floatingSettings" class="request-float hidden">
-    <h2>🎛 設定</h2>
+    <h2>🎧 設定</h2>
     <label>音量:
       <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
     </label>
