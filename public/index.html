@@ -99,6 +99,19 @@
       const isDark = document.documentElement.classList.contains("dark-mode");
       localStorage.setItem("theme", isDark ? "dark" : "light");
     });
+    const privacyLink = document.querySelector('footer a[href="#"]:nth-child(2)');
+const privacyModal = document.getElementById("privacyModal");
+
+privacyLink.addEventListener("click", (e) => {
+e.preventDefault();
+privacyModal.classList.remove("hidden");
+});
+
+privacyModal.addEventListener("click", (e) => {
+if (e.target === privacyModal) {
+privacyModal.classList.add("hidden");
+}
+});
   </script>
 </body>
 </html>
