@@ -128,6 +128,7 @@ function toggleFavorite(title) {
 
 function createTrackList() {
   tracklist.innerHTML = "";
+  const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
   tracks.forEach((track, i) => {
     const li = document.createElement("li");
     const titleSpan = document.createElement("span");
@@ -143,9 +144,10 @@ function createTrackList() {
     downloadLink.title = "ダウンロード";
 
     const favoriteSpan = document.createElement("span");
-    favoriteSpan.textContent = "☆";
+    const isFav = favs.includes(track.title);
+    favoriteSpan.textContent = isFav ? "⭐" : "☆";
     favoriteSpan.className = "favorite-icon";
-    favoriteSpan.title = "お気に入りに追加";
+    favoriteSpan.title = isFav ? "お気に入り済み" : "お気に入りに追加";
     favoriteSpan.onclick = () => toggleFavorite(track.title);
 
     li.appendChild(titleSpan);
