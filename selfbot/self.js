@@ -10,11 +10,11 @@ selfClient.on('ready', () => {
   selfClient.user.setPresence({
     activities: [
       {
-        name: '中野三玖を視聴中',
-        type: 4, // CUSTOM
-        state: '中野三玖',
+        name: '中野三玖',
+        type: 3, // WATCHING
+        details: '中野三玖を視聴中',
         assets: {
-          largeImage: 'nakano_miku_img', // Developer Portal にアップロードした画像キー
+          largeImage: 'nakano_miku_img',
           largeText: '中野三玖'
         }
       }
@@ -24,7 +24,5 @@ selfClient.on('ready', () => {
 });
 
 selfClient.login(process.env.SELF_TOKEN);
-
-module.exports = selfClient;
 
 module.exports = selfClient;
