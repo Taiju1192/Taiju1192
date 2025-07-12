@@ -8,19 +8,18 @@ selfClient.on('ready', () => {
   console.log(`🟢 セルフボット起動: ${selfClient.user.tag}`);
 
   selfClient.user.setPresence({
-  activities: [
-    {
-      name: '中野三玖を視聴中',
-      type: 0, 
-      details: '中野三玖を視聴中',
-      assets: {
-        largeImage: 'nakano_miku_img',
-        largeText: '中野三玖'
+    activities: [
+      {
+        name: '中野三玖を視聴中',
+        type: 0, // PLAYING
+        assets: {
+          largeImage: 'nakano_miku_img', // Discord Developer Portal のキー名
+          largeText: '中野三玖'
+        }
       }
-    }
-  ],
-  status: 'online'
-});
+    ],
+    status: 'online'
+  });
 });
 
 selfClient.login(process.env.SELF_TOKEN);
