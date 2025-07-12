@@ -214,3 +214,21 @@ input[type="range"] {
   background-color: #111;
   color: #888;
 }
+/* ⭐ お気に入りアイコン調整 */
+.favorite-icon {
+font-size: 1rem;
+margin-left: 10px;
+cursor: pointer;
+user-select: none;
+display: inline-block;
+}
+.favorite-icon:hover {
+color: gold;
+}
+
+.dark-mode .favorite-icon {
+color: #ccc;
+}
+.dark-mode .favorite-icon:hover {
+color: gold;
+}
