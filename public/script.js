@@ -1,4 +1,4 @@
-// 🎵 music player script.js - 完全版 with LocalStorage support
+// 🎵 music player script.js - 完全版 with LocalStorage + Favorites support
 
 const player = document.getElementById("player");
 const skipBtn = document.getElementById("skip");
@@ -16,6 +16,9 @@ const volumeSlider = document.getElementById("volumeSlider");
 const speedSlider = document.getElementById("speedSlider");
 const muteBtn = document.getElementById("muteBtn");
 const speedLabel = document.getElementById("speedLabel");
+
+const favoritesList = document.getElementById("favorites");
+let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
 let currentTrack = 0;
 let nextTrack = 1;
@@ -114,6 +117,26 @@ function highlightCurrentTrack() {
   });
 }
 
+function toggleFavorite(title) {
+  if (favorites.includes(title)) {
+    favorites = favorites.filter(t => t !== title);
+  } else {
+    favorites.push(title);
+  }
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  createTrackList();
+  renderFavorites();
+}
+
+function renderFavorites() {
+  favoritesList.innerHTML = "";
+  favorites.forEach(title => {
+    const li = document.createElement("li");
+    li.textContent = title;
+    favoritesList.appendChild(li);
+  });
+}
+
 function createTrackList() {
   tracklist.innerHTML = "";
   tracks.forEach((track, i) => {
@@ -123,6 +146,15 @@ function createTrackList() {
     titleSpan.style.cursor = "pointer";
     titleSpan.onclick = () => loadTrack(i);
 
+    const favBtn = document.createElement("button");
+    favBtn.textContent = favorites.includes(track.title) ? "★" : "☆"; // ★ = filled star, ☆ = empty star
+    favBtn.style.marginLeft = "10px";
+    favBtn.title = "お気に入り切り替え";
+    favBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleFavorite(track.title);
+    };
+
     const downloadLink = document.createElement("a");
     downloadLink.href = track.src;
     downloadLink.textContent = "⬇️";
@@ -131,6 +163,7 @@ function createTrackList() {
     downloadLink.title = "ダウンロード";
 
     li.appendChild(titleSpan);
+    li.appendChild(favBtn);
     li.appendChild(downloadLink);
     tracklist.appendChild(li);
   });
@@ -250,7 +283,7 @@ muteBtn.addEventListener("click", () => {
   muteBtn.textContent = player.muted ? "🔇 ミュート解除" : "🔈 ミュート";
 });
 
-// 🎵 リクエスト処理（省略されずに完全）
+// 🎵 リクエスト処理
 const requestButton = document.getElementById("requestButton");
 const floatingRequest = document.getElementById("floatingRequest");
 const requestForm = document.getElementById("requestForm");
@@ -336,3 +369,4 @@ restoreLastTrack();
 determineNextTrack();
 updateNowNextDisplay();
 loadRequests();
+renderFavorites();
