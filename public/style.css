@@ -139,7 +139,7 @@ input[type="range"] {
   }
 }
 
-/* ✅ スクロールタイトル */
+/* ⬆️ スクロールタイトル */
 #scrollingTitleWrapper {
   width: 100%;
   overflow: hidden;
@@ -164,6 +164,7 @@ input[type="range"] {
     transform: translateX(-100%);
   }
 }
+
 /* 🌙 ナイトモード対応 */
 .dark-mode body {
   background-color: #121212;
@@ -213,4 +214,3 @@ input[type="range"] {
   background-color: #111;
   color: #888;
 }
-
