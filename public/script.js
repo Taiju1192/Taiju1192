@@ -1,4 +1,4 @@
-// 🎵 music player script.js - 完全版 with LocalStorage support
+// 🎵 music player script.js - 完全版 with LocalStorage + Favorite-only Mode support
 
 const player = document.getElementById("player");
 const skipBtn = document.getElementById("skip");
@@ -23,6 +23,7 @@ let playMode = "sequential";
 let repeatOne = false;
 let shuffledPlaylist = [];
 let recentlyPlayed = [];
+let favoriteOnlyMode = false;
 
 const RECENT_HISTORY_SIZE = 10;
 
@@ -39,22 +40,25 @@ function restoreLastTrack() {
   }
 }
 
-function createShuffledPlaylist() {
-  shuffledPlaylist = [...Array(tracks.length).keys()];
-  for (let i = shuffledPlaylist.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffledPlaylist[i], shuffledPlaylist[j]] = [shuffledPlaylist[j], shuffledPlaylist[i]];
+function getAvailableTracks() {
+  const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+  if (favoriteOnlyMode) {
+    return tracks.map((t, i) => favs.includes(t.title) ? i : -1).filter(i => i !== -1);
+  } else {
+    return tracks.map((_, i) => i);
   }
 }
 
 function getRandomTrackWithHistory() {
-  if (recentlyPlayed.length >= tracks.length) recentlyPlayed = [];
-  const availableTracks = tracks.map((_, i) => i).filter(i => !recentlyPlayed.includes(i));
-  if (availableTracks.length === 0) {
+  const candidates = getAvailableTracks();
+  if (candidates.length === 0) return 0;
+  if (recentlyPlayed.length >= candidates.length) recentlyPlayed = [];
+  const available = candidates.filter(i => !recentlyPlayed.includes(i));
+  if (available.length === 0) {
     recentlyPlayed.shift();
     return getRandomTrackWithHistory();
   }
-  return availableTracks[Math.floor(Math.random() * availableTracks.length)];
+  return available[Math.floor(Math.random() * available.length)];
 }
 
 function addToRecentlyPlayed(index) {
@@ -67,7 +71,13 @@ function addToRecentlyPlayed(index) {
 }
 
 function determineNextTrack() {
-  nextTrack = repeatOne ? currentTrack : (playMode === "random" ? getRandomTrackWithHistory() : (currentTrack + 1) % tracks.length);
+  const available = getAvailableTracks();
+  const currentIndexInAvailable = available.indexOf(currentTrack);
+  nextTrack = repeatOne
+    ? currentTrack
+    : playMode === "random"
+    ? getRandomTrackWithHistory()
+    : available[(currentIndexInAvailable + 1) % available.length];
 }
 
 function updateNowNextDisplay() {
@@ -294,6 +304,17 @@ muteBtn.addEventListener("click", () => {
   muteBtn.textContent = player.muted ? "🔇 ミュート解除" : "🔈 ミュート";
 });
 
+const favToggleBtn = document.createElement("button");
+favToggleBtn.textContent = "⭐ お気に入り再生: OFF";
+favToggleBtn.onclick = () => {
+  favoriteOnlyMode = !favoriteOnlyMode;
+  favToggleBtn.textContent = favoriteOnlyMode ? "⭐ お気に入り再生: ON" : "⭐ お気に入り再生: OFF";
+  recentlyPlayed = [];
+  determineNextTrack();
+  updateNowNextDisplay();
+  alert(favoriteOnlyMode ? "お気に入りのみ再生モード ON" : "お気に入りのみ再生モード OFF");
+};
+document.querySelector(".controls")?.appendChild(favToggleBtn);
 // 🎵 リクエスト処理
 const requestButton = document.getElementById("requestButton");
 const floatingRequest = document.getElementById("floatingRequest");
@@ -374,10 +395,10 @@ function updateScrollingTitle(trackTitle) {
 
 // 初期化
 createTrackList();
+renderFavorites();
 playMode = "random";
 updatePlayModeButton();
 restoreLastTrack();
 determineNextTrack();
 updateNowNextDisplay();
 loadRequests();
-renderFavorites();
