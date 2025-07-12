@@ -1,4 +1,4 @@
-// 🎵 music player script.js - 完全版 with LocalStorage + Favorites support
+// 🎵 music player script.js - 完全版 with LocalStorage support
 
 const player = document.getElementById("player");
 const skipBtn = document.getElementById("skip");
@@ -16,9 +16,6 @@ const volumeSlider = document.getElementById("volumeSlider");
 const speedSlider = document.getElementById("speedSlider");
 const muteBtn = document.getElementById("muteBtn");
 const speedLabel = document.getElementById("speedLabel");
-
-const favoritesList = document.getElementById("favorites");
-let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
 let currentTrack = 0;
 let nextTrack = 1;
@@ -118,23 +115,15 @@ function highlightCurrentTrack() {
 }
 
 function toggleFavorite(title) {
-  if (favorites.includes(title)) {
-    favorites = favorites.filter(t => t !== title);
+  let favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+  if (favs.includes(title)) {
+    favs = favs.filter(t => t !== title);
   } else {
-    favorites.push(title);
+    favs.push(title);
   }
-  localStorage.setItem("favorites", JSON.stringify(favorites));
+  localStorage.setItem("favorites", JSON.stringify(favs));
   createTrackList();
   renderFavorites();
-}
-
-function renderFavorites() {
-  favoritesList.innerHTML = "";
-  favorites.forEach(title => {
-    const li = document.createElement("li");
-    li.textContent = title;
-    favoritesList.appendChild(li);
-  });
 }
 
 function createTrackList() {
@@ -146,15 +135,6 @@ function createTrackList() {
     titleSpan.style.cursor = "pointer";
     titleSpan.onclick = () => loadTrack(i);
 
-    const favBtn = document.createElement("button");
-    favBtn.textContent = favorites.includes(track.title) ? "★" : "☆"; // ★ = filled star, ☆ = empty star
-    favBtn.style.marginLeft = "10px";
-    favBtn.title = "お気に入り切り替え";
-    favBtn.onclick = (e) => {
-      e.stopPropagation();
-      toggleFavorite(track.title);
-    };
-
     const downloadLink = document.createElement("a");
     downloadLink.href = track.src;
     downloadLink.textContent = "⬇️";
@@ -162,10 +142,32 @@ function createTrackList() {
     downloadLink.style.marginLeft = "10px";
     downloadLink.title = "ダウンロード";
 
+    const favoriteSpan = document.createElement("span");
+    favoriteSpan.textContent = "☆";
+    favoriteSpan.className = "favorite-icon";
+    favoriteSpan.title = "お気に入りに追加";
+    favoriteSpan.onclick = () => toggleFavorite(track.title);
+
     li.appendChild(titleSpan);
-    li.appendChild(favBtn);
     li.appendChild(downloadLink);
+    li.appendChild(favoriteSpan);
     tracklist.appendChild(li);
+  });
+}
+
+function renderFavorites() {
+  const favEl = document.getElementById("favorites");
+  if (!favEl) return;
+  favEl.innerHTML = "";
+  const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
+  tracks.forEach((track, i) => {
+    if (favs.includes(track.title)) {
+      const li = document.createElement("li");
+      li.textContent = track.title;
+      li.style.cursor = "pointer";
+      li.onclick = () => loadTrack(i);
+      favEl.appendChild(li);
+    }
   });
 }
 
@@ -247,8 +249,15 @@ search.addEventListener("input", () => {
     downloadLink.style.marginLeft = "10px";
     downloadLink.title = "ダウンロード";
 
+    const favoriteSpan = document.createElement("span");
+    favoriteSpan.textContent = "☆";
+    favoriteSpan.className = "favorite-icon";
+    favoriteSpan.title = "お気に入りに追加";
+    favoriteSpan.onclick = () => toggleFavorite(track.title);
+
     li.appendChild(titleSpan);
     li.appendChild(downloadLink);
+    li.appendChild(favoriteSpan);
     tracklist.appendChild(li);
   });
 });
