@@ -1,3 +1,5 @@
+// 🎵 music player script.js - 完全版 with LocalStorage support
+
 const player = document.getElementById("player");
 const skipBtn = document.getElementById("skip");
 const shuffleBtn = document.getElementById("shuffle");
@@ -23,6 +25,19 @@ let shuffledPlaylist = [];
 let recentlyPlayed = [];
 
 const RECENT_HISTORY_SIZE = 10;
+
+function saveCurrentTrack() {
+  localStorage.setItem("currentTrackIndex", currentTrack);
+}
+
+function restoreLastTrack() {
+  const savedIndex = parseInt(localStorage.getItem("currentTrackIndex"));
+  if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < tracks.length) {
+    loadTrack(savedIndex);
+  } else {
+    playRandomTrack();
+  }
+}
 
 function createShuffledPlaylist() {
   shuffledPlaylist = [...Array(tracks.length).keys()];
@@ -70,6 +85,7 @@ function loadTrack(index) {
   updateNowNextDisplay();
   updateScrollingTitle(tracks[index].title);
   startTitleScroll(tracks[index].title);
+  saveCurrentTrack();
 
   if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -234,6 +250,7 @@ muteBtn.addEventListener("click", () => {
   muteBtn.textContent = player.muted ? "🔇 ミュート解除" : "🔈 ミュート";
 });
 
+// 🎵 リクエスト処理（省略されずに完全）
 const requestButton = document.getElementById("requestButton");
 const floatingRequest = document.getElementById("floatingRequest");
 const requestForm = document.getElementById("requestForm");
@@ -315,7 +332,7 @@ function updateScrollingTitle(trackTitle) {
 createTrackList();
 playMode = "random";
 updatePlayModeButton();
-playRandomTrack();
+restoreLastTrack();
 determineNextTrack();
 updateNowNextDisplay();
 loadRequests();
