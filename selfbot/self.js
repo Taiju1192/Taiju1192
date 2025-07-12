@@ -10,8 +10,8 @@ selfClient.on('ready', () => {
   selfClient.user.setPresence({
   activities: [
     {
-      name: '中野三玖',
-      type: 3, // WATCHING
+      name: '中野三玖を視聴中',
+      type: 0, 
       details: '中野三玖を視聴中',
       assets: {
         largeImage: 'nakano_miku_img',
