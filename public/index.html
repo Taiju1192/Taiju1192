@@ -18,14 +18,11 @@
       <li><a href="#">ホーム</a></li>
       <li><a href="#" role="button" id="settingsButton">設定</a></li>
       <li><a href="#" role="button" id="requestButton">リクエスト</a></li>
-      <li><a href="#" role="button" id="themeToggle">🌓 ナイトモード</a></li>
     </ul>
   </nav>
-
   <div id="scrollingTitleWrapper">
     <div id="scrollingTitle">🎵 Now Playing: </div>
   </div>
-
   <main class="container">
     <div class="grid">
       <section>
@@ -50,7 +47,6 @@
       </section>
     </div>
   </main>
-
   <div id="floatingSettings" class="request-float hidden">
     <h2>🎛 設定</h2>
     <label>音量:
@@ -61,8 +57,8 @@
     </label>
     <span id="speedLabel">速度: 1x</span><br>
     <button id="muteBtn">🔈 ミュート</button>
+    <button id="toggleDarkMode">🌙 ナイトモード</button>
   </div>
-
   <div id="floatingRequest" class="request-float hidden">
     <h2>曲のリクエスト</h2>
     <form id="requestForm">
@@ -72,25 +68,10 @@
     <h3>リクエスト一覧</h3>
     <ul id="requestList"></ul>
   </div>
-
   <footer class="container">
     <small><a href="#">© 2025 音楽サイト</a> • <a href="#">プライバシー</a></small>
   </footer>
-
   <script src="tracks.js"></script>
   <script src="script.js"></script>
-  <script>
-    const toggleBtn = document.getElementById("themeToggle");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark-mode");
-    }
-    toggleBtn.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark-mode");
-      const isDark = document.documentElement.classList.contains("dark-mode");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    });
-  </script>
 </body>
 </html>
