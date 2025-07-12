@@ -10,6 +10,11 @@ const search = document.getElementById("search");
 const nowPlayingEl = document.getElementById("nowPlaying");
 const nextTrackEl = document.getElementById("nextTrack");
 
+const volumeSlider = document.getElementById("volumeSlider");
+const speedSlider = document.getElementById("speedSlider");
+const muteBtn = document.getElementById("muteBtn");
+const speedLabel = document.getElementById("speedLabel");
+
 let currentTrack = 0;
 let nextTrack = 1;
 let playMode = "sequential";
@@ -65,6 +70,7 @@ function loadTrack(index) {
   updateNowNextDisplay();
   updateScrollingTitle(tracks[index].title);
   startTitleScroll(tracks[index].title);
+
   if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: tracks[index].title,
@@ -79,8 +85,7 @@ function loadTrack(index) {
       ]
     });
 
-    // ロック画面の操作
-    navigator.mediaSession.setActionHandler('nexttrack', () => {
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
       loadTrack(nextTrack);
     });
   }
@@ -199,7 +204,6 @@ search.addEventListener("input", () => {
   });
 });
 
-// 🎧 設定パネル制御
 const settingsButton = document.getElementById("settingsButton");
 const floatingSettings = document.getElementById("floatingSettings");
 settingsButton.addEventListener("click", (e) => {
@@ -230,7 +234,6 @@ muteBtn.addEventListener("click", () => {
   muteBtn.textContent = player.muted ? "🔇 ミュート解除" : "🔈 ミュート";
 });
 
-// 🎵 リクエスト処理
 const requestButton = document.getElementById("requestButton");
 const floatingRequest = document.getElementById("floatingRequest");
 const requestForm = document.getElementById("requestForm");
