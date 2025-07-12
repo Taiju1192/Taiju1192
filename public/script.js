@@ -315,62 +315,6 @@ favToggleBtn.onclick = () => {
   alert(favoriteOnlyMode ? "お気に入りのみ再生モード ON" : "お気に入りのみ再生モード OFF");
 };
 document.querySelector(".controls")?.appendChild(favToggleBtn);
-// 🎵 リクエスト処理
-const requestButton = document.getElementById("requestButton");
-const floatingRequest = document.getElementById("floatingRequest");
-const requestForm = document.getElementById("requestForm");
-const requestTitle = document.getElementById("requestTitle");
-const requestList = document.getElementById("requestList");
-
-requestButton.addEventListener("click", (e) => {
-  e.preventDefault();
-  floatingRequest.classList.remove("hidden");
-  setTimeout(() => floatingRequest.classList.add("show"), 10);
-});
-
-document.addEventListener("click", (e) => {
-  if (floatingRequest.classList.contains("show") && !floatingRequest.contains(e.target) && e.target !== requestButton) {
-    floatingRequest.classList.remove("show");
-    setTimeout(() => floatingRequest.classList.add("hidden"), 500);
-  }
-});
-
-requestForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const title = requestTitle.value.trim();
-  if (!title) return;
-  await fetch("/api/request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  requestTitle.value = "";
-  loadRequests();
-});
-
-async function loadRequests() {
-  const res = await fetch("/api/requests");
-  const data = await res.json();
-  requestList.innerHTML = "";
-  data.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = item.title;
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "削除";
-    delBtn.onclick = async () => {
-      const key = prompt("削除キーを入力してください（管理者専用）:");
-      if (!key) return;
-      await fetch("/api/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: item.title, key }),
-      });
-      loadRequests();
-    };
-    li.appendChild(delBtn);
-    requestList.appendChild(li);
-  });
-}
 
 let scrollTitleInterval;
 let titleBase = "🎵 Now Playing: ";
@@ -393,7 +337,6 @@ function updateScrollingTitle(trackTitle) {
   if (el) el.textContent = `🎵 Now Playing: ${trackTitle} — `.repeat(3);
 }
 
-// 初期化
 createTrackList();
 renderFavorites();
 playMode = "random";
