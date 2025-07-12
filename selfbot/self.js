@@ -1,23 +1,20 @@
 const { Client } = require('discord.js-selfbot-v13');
 require('dotenv').config();
 
-const selfClient = new Client();
+const client = new Client();
 
-selfClient.on('ready', async () => {
-  console.log(`🟢 セルフボット起動: ${selfClient.user.tag}`);
+client.on('ready', () => {
+  console.log(`✅ セルフボット起動: ${client.user.tag}`);
 
-  selfClient.user.setPresence({
+  client.user.setPresence({
     status: 'online',
     activities: [
       {
         name: '中野三玖を推し中',
-        type: 0, // 0 = Playing, 2 = Listening, 3 = Watching
-        details: '今日も推し活',
+        type: 0, // PLAYING
       }
     ],
   });
-
-  console.log('🎮 アクティビティを設定しました');
 });
 
 selfClient.login(process.env.SELF_TOKEN);
