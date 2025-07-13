@@ -138,11 +138,16 @@
     const typingSection = document.getElementById("typingSection");
 
     homeLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      const showTyping = typingSection.style.display === "none";
-      musicPlayerSection.style.display = showTyping ? "none" : "block";
-      typingSection.style.display = showTyping ? "block" : "none";
-    });
+  e.preventDefault();
+  const showTyping = typingSection.style.display === "none";
+  musicPlayerSection.style.display = showTyping ? "none" : "block";
+  typingSection.style.display = showTyping ? "block" : "none";
+
+  if (showTyping && typeof window.startTypingMode === "function") {
+    window.startTypingMode(); // お題の読み込みと表示を開始
+  }
+});
+
   </script>
 </body>
 </html>
