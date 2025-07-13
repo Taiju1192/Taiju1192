@@ -124,16 +124,28 @@ function nextTypingQuestion() {
 }
 
 typingInput.addEventListener("input", () => {
-  const typed = typingInput.value;
-  if (currentTypingRomanList.some(r => r.startsWith(typed))) {
+  const typed = typingInput.value.trim();
+  const correctJapanese = currentTypingKana.trim();
+
+  // 正解か判定（日本語一致 or ローマ字一致）
+  const isCorrect = (
+    typed === correctJapanese ||
+    currentTypingRomanList.includes(typed)
+  );
+
+  // 入力された文字数 > 0 なら常に効果音を鳴らす
+  if (typed.length > 0) {
     const sound = keySounds[Math.floor(Math.random() * keySounds.length)];
     sound.currentTime = 0;
     sound.play();
   }
-  if (currentTypingRomanList.includes(typed)) {
+
+  if (isCorrect) {
+    typingInput.value = ""; // 入力欄クリア
     nextTypingQuestion();
   }
 });
+
 
 exitTyping.addEventListener("click", () => {
   typingWrapper.style.display = "none";
