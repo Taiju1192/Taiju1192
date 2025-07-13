@@ -14,7 +14,7 @@
       <li><strong>🎷 音楽プレイヤー</strong></li>
     </ul>
     <ul>
-      <li><a href="#">ホーム</a></li>
+      <li><a href="#" id="homeLink">タイピング</a></li>
       <li><a href="#" role="button" id="settingsButton">設定</a></li>
       <li><a href="#" role="button" id="requestButton">リクエスト</a></li>
       <li><a href="#" role="button" id="themeToggle">🌃 ナイトモード</a></li>
@@ -27,7 +27,7 @@
 
   <main class="container">
     <div class="grid">
-      <section>
+      <section id="musicPlayerSection">
         <hgroup>
           <h2>プレイヤー</h2>
           <h3>全曲確実に再生！</h3>
@@ -49,6 +49,19 @@
         <div>
           <h4>⭐ お気に入りプレイリスト</h4>
           <ul id="favorites"></ul>
+        </div>
+      </section>
+
+      <section id="typingSection" style="display:none">
+        <hgroup>
+          <h2>💻 Easy Typing</h2>
+          <h3>ローマ字タイピング練習</h3>
+        </hgroup>
+        <div id="typingContainer">
+          <p id="typingSentence">お題の文がここに表示されます。</p>
+          <input type="text" id="typingInput" placeholder="ここにタイピング" autocomplete="off" />
+          <p id="typingResult"></p>
+          <button id="nextTyping">次のお題</button>
         </div>
       </section>
     </div>
@@ -76,7 +89,6 @@
     <ul id="requestList"></ul>
   </div>
 
-  <!-- 🔐 プライバシーモーダル -->
   <div id="privacyModal" class="modal hidden">
     <div class="modal-content">
       <h2>プライバシーポリシー</h2>
@@ -92,6 +104,7 @@
 
   <script src="tracks.js"></script>
   <script src="script.js"></script>
+  <script src="typing.js"></script>
   <script>
     const toggleBtn = document.getElementById("themeToggle");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -117,6 +130,16 @@
       if (e.target === privacyModal) {
         privacyModal.classList.add("hidden");
       }
+    });
+
+    const homeLink = document.getElementById("homeLink");
+    const musicPlayerSection = document.getElementById("musicPlayerSection");
+    const typingSection = document.getElementById("typingSection");
+
+    homeLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      musicPlayerSection.style.display = musicPlayerSection.style.display === "none" ? "block" : "none";
+      typingSection.style.display = typingSection.style.display === "none" ? "block" : "none";
     });
   </script>
 </body>
