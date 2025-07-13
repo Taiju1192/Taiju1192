@@ -26,81 +26,117 @@ const keySounds = [
   new Audio("https://soundeffect-lab.info/sound/machine/mp3/keyboard2.mp3"),
 ];
 
-const typingQuestions = [
-  "ああ言えばこう言う",
-  "開いた口がふさがらない",
-  "愛に国境はない",
-  "青い空、白い雲"
-];
-
+let typingQuestions = [];
 let currentTypingKana = "";
-let currentTypingRoman = "";
+let currentTypingRomanList = [];
 
-// ひらがな → ローマ字変換（超簡易バージョン。応用可能）
-function kanaToRomaji(kana) {
+function kanaToRomajiVariants(kana) {
   const table = {
-    あ: "a", い: "i", う: "u", え: "e", お: "o",
-    か: "ka", き: "ki", く: "ku", け: "ke", こ: "ko",
-    さ: "sa", し: "shi", す: "su", せ: "se", そ: "so",
-    た: "ta", ち: "chi", つ: "tsu", て: "te", と: "to",
-    な: "na", に: "ni", ぬ: "nu", ね: "ne", の: "no",
-    は: "ha", ひ: "hi", ふ: "fu", へ: "he", ほ: "ho",
-    ま: "ma", み: "mi", む: "mu", め: "me", も: "mo",
-    や: "ya", ゆ: "yu", よ: "yo",
-    ら: "ra", り: "ri", る: "ru", れ: "re", ろ: "ro",
-    わ: "wa", を: "wo", ん: "n",
-    が: "ga", ぎ: "gi", ぐ: "gu", げ: "ge", ご: "go",
-    ざ: "za", じ: "ji", ず: "zu", ぜ: "ze", ぞ: "zo",
-    だ: "da", ぢ: "ji", づ: "zu", で: "de", ど: "do",
-    ば: "ba", び: "bi", ぶ: "bu", べ: "be", ぼ: "bo",
-    ぱ: "pa", ぴ: "pi", ぷ: "pu", ぺ: "pe", ぽ: "po",
-    きゃ: "kya", きゅ: "kyu", きょ: "kyo",
-    しゃ: "sha", しゅ: "shu", しょ: "sho",
-    ちゃ: "cha", ちゅ: "chu", ちょ: "cho",
-    にゃ: "nya", にゅ: "nyu", にょ: "nyo",
-    ひゃ: "hya", ひゅ: "hyu", ひょ: "hyo",
-    みゃ: "mya", みゅ: "myu", みょ: "myo",
-    りゃ: "rya", りゅ: "ryu", りょ: "ryo",
-    ぎゃ: "gya", ぎゅ: "gyu", ぎょ: "gyo",
-    じゃ: "ja", じゅ: "ju", じょ: "jo",
-    ぴゃ: "pya", ぴゅ: "pyu", ぴょ: "pyo",
-    っ: "",　ー: "-", // 拗音と促音など（っはスキップで処理）
+    あ: ["a"], い: ["i"], う: ["u"], え: ["e"], お: ["o"],
+    か: ["ka"], き: ["ki"], く: ["ku"], け: ["ke"], こ: ["ko"],
+    さ: ["sa"], し: ["shi", "si"], す: ["su"], せ: ["se"], そ: ["so"],
+    た: ["ta"], ち: ["chi", "ti"], つ: ["tsu", "tu"], て: ["te"], と: ["to"],
+    な: ["na"], に: ["ni"], ぬ: ["nu"], ね: ["ne"], の: ["no"],
+    は: ["ha"], ひ: ["hi"], ふ: ["fu", "hu"], へ: ["he"], ほ: ["ho"],
+    ま: ["ma"], み: ["mi"], む: ["mu"], め: ["me"], も: ["mo"],
+    や: ["ya"], ゆ: ["yu"], よ: ["yo"],
+    ら: ["ra"], り: ["ri"], る: ["ru"], れ: ["re"], ろ: ["ro"],
+    わ: ["wa"], を: ["wo"], ん: ["n"],
+    が: ["ga"], ぎ: ["gi"], ぐ: ["gu"], げ: ["ge"], ご: ["go"],
+    ざ: ["za"], じ: ["ji", "zi"], ず: ["zu"], ぜ: ["ze"], ぞ: ["zo"],
+    だ: ["da"], ぢ: ["ji", "di"], づ: ["zu", "du"], で: ["de"], ど: ["do"],
+    ば: ["ba"], び: ["bi"], ぶ: ["bu"], べ: ["be"], ぼ: ["bo"],
+    ぱ: ["pa"], ぴ: ["pi"], ぷ: ["pu"], ぺ: ["pe"], ぽ: ["po"],
+    きゃ: ["kya"], きゅ: ["kyu"], きょ: ["kyo"],
+    しゃ: ["sha", "sya"], しゅ: ["shu", "syu"], しょ: ["sho", "syo"],
+    ちゃ: ["cha", "tya"], ちゅ: ["chu", "tyu"], ちょ: ["cho", "tyo"],
+    にゃ: ["nya"], にゅ: ["nyu"], にょ: ["nyo"],
+    ひゃ: ["hya"], ひゅ: ["hyu"], ひょ: ["hyo"],
+    みゃ: ["mya"], みゅ: ["myu"], みょ: ["myo"],
+    りゃ: ["rya"], りゅ: ["ryu"], りょ: ["ryo"],
+    ぎゃ: ["gya"], ぎゅ: ["gyu"], ぎょ: ["gyo"],
+    じゃ: ["ja", "zya", "jya"], じゅ: ["ju", "zyu", "jyu"], じょ: ["jo", "zyo", "jyo"],
+    ぴゃ: ["pya"], ぴゅ: ["pyu"], ぴょ: ["pyo"],
+    っ: ["ltu", "xtu"],
+    ー: ["-"],
   };
 
-  let romaji = "";
-  for (let i = 0; i < kana.length; i++) {
-    let two = kana[i] + kana[i + 1];
-    if (table[two]) {
-      romaji += table[two];
-      i++;
-    } else if (kana[i] === "っ" && kana[i + 1]) {
-      const next = kana[i + 1];
-      let nextRoma = table[next] || "";
-      romaji += nextRoma[0]; // 促音処理（次の子音を重ねる）
-    } else {
-      romaji += table[kana[i]] || "";
+  function combineRomaji(kanaStr) {
+    const results = [""];
+    for (let i = 0; i < kanaStr.length; i++) {
+      let matched = false;
+
+      if (i + 1 < kanaStr.length) {
+        const twoKana = kanaStr[i] + kanaStr[i + 1];
+        if (table[twoKana]) {
+          const romas = table[twoKana];
+          const newResults = [];
+          for (const base of results) {
+            for (const roma of romas) {
+              newResults.push(base + roma);
+            }
+          }
+          results.splice(0, results.length, ...newResults);
+          i++;
+          matched = true;
+        }
+      }
+
+      if (!matched) {
+        const char = kanaStr[i];
+        if (char === "っ" && kanaStr[i + 1]) {
+          const nextChar = kanaStr[i + 1];
+          let nextRomaSet = [];
+          if (i + 2 < kanaStr.length) {
+            const two = kanaStr[i + 1] + kanaStr[i + 2];
+            if (table[two]) nextRomaSet = table[two];
+          }
+          if (!nextRomaSet.length && table[nextChar]) nextRomaSet = table[nextChar];
+          const doubled = nextRomaSet.map(r => r[0] + r);
+          const newResults = [];
+          for (const base of results) {
+            for (const r of doubled.concat(["ltu", "xtu"])) {
+              newResults.push(base + r);
+            }
+          }
+          results.splice(0, results.length, ...newResults);
+        } else if (table[char]) {
+          const romas = table[char];
+          const newResults = [];
+          for (const base of results) {
+            for (const roma of romas) {
+              newResults.push(base + roma);
+            }
+          }
+          results.splice(0, results.length, ...newResults);
+        } else {
+          results.forEach((r, idx) => results[idx] = r + char);
+        }
+      }
     }
+    return results;
   }
-  return romaji;
+
+  return combineRomaji(kana);
 }
 
 function nextTypingQuestion() {
   const index = Math.floor(Math.random() * typingQuestions.length);
   currentTypingKana = typingQuestions[index];
-  currentTypingRoman = kanaToRomaji(currentTypingKana);
+  currentTypingRomanList = kanaToRomajiVariants(currentTypingKana);
   typingDisplay.innerHTML = `<strong>${currentTypingKana}</strong>`;
   typingInput.value = "";
 }
 
 typingInput.addEventListener("input", () => {
   const typed = typingInput.value;
-  if (currentTypingRoman.startsWith(typed)) {
+  if (currentTypingRomanList.some(r => r.startsWith(typed))) {
     const sound = keySounds[Math.floor(Math.random() * keySounds.length)];
     sound.currentTime = 0;
     sound.play();
   }
 
-  if (typed === currentTypingRoman) {
+  if (currentTypingRomanList.includes(typed)) {
     nextTypingQuestion();
   }
 });
@@ -110,7 +146,15 @@ exitTyping.addEventListener("click", () => {
 });
 
 window.startTypingMode = function () {
-  nextTypingQuestion();
-  typingWrapper.style.display = "block";
-  typingInput.focus();
+  const script = document.createElement("script");
+  script.src = "typing_word.js";
+  script.onload = () => {
+    if (Array.isArray(window.typingWords)) {
+      typingQuestions = window.typingWords;
+      nextTypingQuestion();
+      typingWrapper.style.display = "block";
+      typingInput.focus();
+    }
+  };
+  document.body.appendChild(script);
 };
