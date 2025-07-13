@@ -11,7 +11,7 @@
 <body>
   <nav class="container-fluid">
     <ul>
-      <li><strong>🎷 音楽プレイヤー</strong></li>
+      <li><strong>🌷 音楽プレイヤー</strong></li>
     </ul>
     <ul>
       <li><a href="#" id="homeLink">タイピング</a></li>
@@ -62,6 +62,7 @@
           <input type="text" id="typingInput" placeholder="ここにタイピング" autocomplete="off" />
           <p id="typingResult"></p>
           <button id="nextTyping">次のお題</button>
+          <button id="stopTyping">終了</button>
         </div>
       </section>
     </div>
@@ -138,8 +139,9 @@
 
     homeLink.addEventListener("click", (e) => {
       e.preventDefault();
-      musicPlayerSection.style.display = musicPlayerSection.style.display === "none" ? "block" : "none";
-      typingSection.style.display = typingSection.style.display === "none" ? "block" : "none";
+      const showTyping = typingSection.style.display === "none";
+      musicPlayerSection.style.display = showTyping ? "none" : "block";
+      typingSection.style.display = showTyping ? "block" : "none";
     });
   </script>
 </body>
