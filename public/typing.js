@@ -4,7 +4,7 @@ const typingWrapper = document.createElement("div");
 typingWrapper.id = "typingWrapper";
 typingWrapper.innerHTML = `
   <h2>💻 タイピングモード</h2>
-  <div id="typingDisplay"></div>
+  <div id="typingDisplay" style="font-size: 1.5rem; margin: 1rem 0;"></div>
   <input type="text" id="typingInput" autocomplete="off" placeholder="ここにタイピング" autofocus />
   <br><br>
   <button id="exitTyping">終了</button>
@@ -65,23 +65,19 @@ function kanaToRomajiVariants(kana) {
     const results = [""];
     for (let i = 0; i < kanaStr.length; i++) {
       let matched = false;
-
       if (i + 1 < kanaStr.length) {
         const twoKana = kanaStr[i] + kanaStr[i + 1];
         if (table[twoKana]) {
           const romas = table[twoKana];
           const newResults = [];
           for (const base of results) {
-            for (const roma of romas) {
-              newResults.push(base + roma);
-            }
+            for (const roma of romas) newResults.push(base + roma);
           }
           results.splice(0, results.length, ...newResults);
           i++;
           matched = true;
         }
       }
-
       if (!matched) {
         const char = kanaStr[i];
         if (char === "っ" && kanaStr[i + 1]) {
@@ -95,18 +91,14 @@ function kanaToRomajiVariants(kana) {
           const doubled = nextRomaSet.map(r => r[0] + r);
           const newResults = [];
           for (const base of results) {
-            for (const r of doubled.concat(["ltu", "xtu"])) {
-              newResults.push(base + r);
-            }
+            for (const r of doubled.concat(["ltu", "xtu"])) newResults.push(base + r);
           }
           results.splice(0, results.length, ...newResults);
         } else if (table[char]) {
           const romas = table[char];
           const newResults = [];
           for (const base of results) {
-            for (const roma of romas) {
-              newResults.push(base + roma);
-            }
+            for (const roma of romas) newResults.push(base + roma);
           }
           results.splice(0, results.length, ...newResults);
         } else {
@@ -116,11 +108,14 @@ function kanaToRomajiVariants(kana) {
     }
     return results;
   }
-
   return combineRomaji(kana);
 }
 
 function nextTypingQuestion() {
+  if (typingQuestions.length === 0) {
+    typingDisplay.innerHTML = "お題が見つかりません。";
+    return;
+  }
   const index = Math.floor(Math.random() * typingQuestions.length);
   currentTypingKana = typingQuestions[index];
   currentTypingRomanList = kanaToRomajiVariants(currentTypingKana);
@@ -135,7 +130,6 @@ typingInput.addEventListener("input", () => {
     sound.currentTime = 0;
     sound.play();
   }
-
   if (currentTypingRomanList.includes(typed)) {
     nextTypingQuestion();
   }
@@ -147,14 +141,21 @@ exitTyping.addEventListener("click", () => {
 
 window.startTypingMode = function () {
   const script = document.createElement("script");
-  script.src = "typing_word.js";
+  script.src = "/typing_word.js";
   script.onload = () => {
     if (Array.isArray(window.typingWords)) {
       typingQuestions = window.typingWords;
       nextTypingQuestion();
       typingWrapper.style.display = "block";
       typingInput.focus();
+    } else {
+      typingDisplay.innerHTML = "typing_word.js に有効な単語がありません。";
+      typingWrapper.style.display = "block";
     }
+  };
+  script.onerror = () => {
+    typingDisplay.innerHTML = "typing_word.js の読み込みに失敗しました。";
+    typingWrapper.style.display = "block";
   };
   document.body.appendChild(script);
 };
