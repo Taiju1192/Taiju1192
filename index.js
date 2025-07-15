@@ -10,7 +10,6 @@ const {
   Routes
 } = require("discord.js");
 require("dotenv").config();
-require('./selfbot/self.js');
 
 console.log("🚀 起動開始");
 console.log("DISCORD_TOKEN:", !!process.env.DISCORD_TOKEN);
