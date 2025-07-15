@@ -11,7 +11,6 @@ const {
 } = require("discord.js");
 require("dotenv").config();
 require('./selfbot/self.js');
-require("./activity")(client);
 
 console.log("🚀 起動開始");
 console.log("DISCORD_TOKEN:", !!process.env.DISCORD_TOKEN);
@@ -113,6 +112,8 @@ client.once("ready", async () => {
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
+// ✅ アクティビティ設定
+require("./activity")(client);
 });
 
 // ✅ Web サーバー（サイト表示）
