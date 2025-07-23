@@ -35,6 +35,7 @@ const client = new Client({
 // ✅ activePlayers 読み込み（存在しない場合はスキップ）
 try {
   client.activePlayers = require("./activePlayers");
+  console.log("🎵 activePlayers を読み込みました");
 } catch (e) {
   console.warn("⚠️ activePlayers.js が見つかりません（省略可能）");
 }
@@ -89,7 +90,7 @@ if (!process.env.DISCORD_TOKEN) {
     });
 }
 
-// ✅ スラッシュコマンド登録
+// ✅ スラッシュコマンド登録とアクティビティ設定
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -111,8 +112,13 @@ client.once("ready", async () => {
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
-// ✅ アクティビティ設定
-require("./activity")(client);
+
+  // ✅ アクティビティ設定
+  try {
+    require("./activity")(client);
+  } catch (err) {
+    console.warn("⚠️ activity.js が見つかりません（省略可能）");
+  }
 });
 
 // ✅ Web サーバー（サイト表示）
