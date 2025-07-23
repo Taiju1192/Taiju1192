@@ -1,58 +1,81 @@
 const {
   SlashCommandBuilder,
-  PermissionFlagsBits,
-  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  PermissionsBitField,
+  EmbedBuilder
 } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('verify')
-    .setDescription('✅ 認証パネルを設置します')
+    .setDescription('認証パネルを送信します')
     .addRoleOption(option =>
-      option.setName('ロール')
-        .setDescription('認証後に付与するロール')
-        .setRequired(true))
+      option
+        .setName('role')
+        .setDescription('付与するロール')
+        .setRequired(true)
+    )
     .addStringOption(option =>
-      option.setName('タイトル')
-        .setDescription('パネルのタイトル'))
+      option
+        .setName('title')
+        .setDescription('タイトル')
+    )
     .addStringOption(option =>
-      option.setName('概要')
-        .setDescription('パネルの説明文'))
+      option
+        .setName('description')
+        .setDescription('説明文')
+    )
     .addStringOption(option =>
-      option.setName('ボタンラベル')
-        .setDescription('ボタンに表示するテキスト'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+      option
+        .setName('button')
+        .setDescription('ボタンのラベル')
+    )
+    .addAttachmentOption(option =>
+      option
+        .setName('image')
+        .setDescription('埋め込み画像')
+    ),
 
   async execute(interaction) {
-    const role = interaction.options.getRole('ロール');
-    const title = interaction.options.getString('タイトル') || '✅ 認証パネル';
-    const description = interaction.options.getString('概要') || '以下のボタンを押して認証を完了してください。';
-    const buttonLabel = interaction.options.getString('ボタンラベル') || 'Verify✅';
-
-    // Botのロール順位チェック
-    const botMember = await interaction.guild.members.fetchMe();
-    if (botMember.roles.highest.comparePositionTo(role) <= 0) {
+    // 管理者チェック
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return interaction.reply({
-        content: '⚠️ Botのロールが指定されたロールより下のため、付与できません。',
+        content: '❌ このコマンドは管理者のみ使用できます。',
         ephemeral: true
       });
     }
 
+    const role = interaction.options.getRole('role');
+    const title = interaction.options.getString('title') || '✅ 認証パネル';
+    const description = interaction.options.getString('description') || `以下のボタンを押すことで ${role} が付与されます。`;
+    const buttonLabel = interaction.options.getString('button') || '認証';
+    const image = interaction.options.getAttachment('image');
+
+    const colors = [0xff5733, 0x33ff57, 0x3357ff, 0xff33a6, 0x33fff3, 0xffa833, 0xa833ff];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
     const embed = new EmbedBuilder()
       .setTitle(title)
-      .setDescription(`${description}\n\n\`\`\`\n付与ロール ${role.name}\n\`\`\``)
-      .setColor(0x2ecc71);
+      .setDescription(description)
+      .setColor(color)
+      .setTimestamp();
+
+    if (image && image.contentType?.startsWith('image')) {
+      embed.setImage(image.url);
+    }
 
     const button = new ButtonBuilder()
-      .setCustomId(`verify-role-${role.id}`)
+      .setCustomId(`verify-${role.id}`)
       .setLabel(buttonLabel)
       .setStyle(ButtonStyle.Success);
 
     const row = new ActionRowBuilder().addComponents(button);
 
-    await interaction.reply({ embeds: [embed], components: [row] });
+    await interaction.reply({
+      embeds: [embed],
+      components: [row]
+    });
   }
 };
