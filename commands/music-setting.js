@@ -11,30 +11,25 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // ✅ 3秒ルール対策
+      // deferReply は 3秒ルールの対策だが、使うなら必ず editReply に続けること
       await interaction.deferReply({ ephemeral: true });
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId("music_settings")
         .setPlaceholder("設定を選択してください")
-        .setMinValues(1)
-        .setMaxValues(1)
         .addOptions([
           {
             label: "音量を変更",
-            description: "再生音量を調整します",
             value: "volume",
             emoji: "🔊"
           },
           {
             label: "リピート切替",
-            description: "再生リピートをオン/オフ",
             value: "repeat",
             emoji: "🔁"
           },
           {
             label: "キューをシャッフル",
-            description: "キューの曲順をランダムにします",
             value: "shuffle",
             emoji: "🔀"
           }
@@ -49,16 +44,21 @@ module.exports = {
 
     } catch (err) {
       console.error("❌ music-setting.js エラー:", err);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: "⚠ 設定メニューの表示に失敗しました。",
-          ephemeral: true
-        });
-      } else {
-        await interaction.reply({
-          content: "⚠ 設定メニューの表示に失敗しました。",
-          ephemeral: true
-        });
+
+      try {
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: "⚠ 設定メニューの表示に失敗しました。",
+            components: []
+          });
+        } else if (!interaction.replied) {
+          await interaction.reply({
+            content: "⚠ 設定メニューの表示に失敗しました。",
+            ephemeral: true
+          });
+        }
+      } catch (nestedErr) {
+        console.warn("⚠ 二重応答を防止しました");
       }
     }
   }
