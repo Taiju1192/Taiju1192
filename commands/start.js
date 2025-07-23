@@ -132,7 +132,7 @@ module.exports = {
     if (!voiceChannel) {
       return interaction.reply({
         content: "🔊 まずボイスチャンネルに参加してください！",
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -141,7 +141,7 @@ module.exports = {
     if (activePlayers.has(guildId)) {
       return interaction.reply({
         content: "❗ 既に再生中です。止めるには /stop を使ってください。",
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -239,7 +239,7 @@ module.exports = {
 
       connection.subscribe(player);
 
-      // ✅ 初期設定に volume と repeat を追加（重要！）
+         // ✅ 初期設定に volume と repeat を追加（重要！）
       activePlayers.set(guildId, {
         connection,
         player,
@@ -253,20 +253,31 @@ module.exports = {
       });
 
       await playNext(guildId, selectedTrack);
-      await interaction.editReply("▶️ 再生を開始しました。");
+
+      try {
+        await interaction.editReply("▶️ 再生を開始しました。");
+      } catch (err) {
+        if (err.code !== 40060) { // 40060 = Interaction already acknowledged
+          console.error("❌ editReply に失敗しました:", err);
+        }
+      }
 
     } catch (error) {
       console.error("❌ /start コマンド実行中のエラー:", error);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: "⚠️ エラーが発生しました。再生できませんでした。",
-          ephemeral: true
-        });
-      } else {
-        await interaction.reply({
-          content: "⚠️ エラーが発生しました。再生できませんでした。",
-          ephemeral: true
-        });
+
+      const errorMessage = {
+        content: "⚠️ エラーが発生しました。再生できませんでした。",
+        ephemeral: true
+      };
+
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.followUp(errorMessage);
+        } else {
+          await interaction.reply(errorMessage);
+        }
+      } catch (err) {
+        console.error("⚠️ エラーメッセージの送信にも失敗:", err);
       }
     }
   }
