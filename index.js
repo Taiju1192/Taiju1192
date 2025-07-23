@@ -90,11 +90,20 @@ client.once("ready", async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
   try {
+    // ✅ まず既存のグローバルコマンドを削除
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: [] }
+    );
+    console.log("🧹 既存のグローバルコマンドを削除しました");
+
+    // ✅ 新しいコマンドを登録
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands }
     );
-    console.log("🌐 グローバルコマンドとして登録されました（最大1時間で反映）");
+    console.log("🌐 新しいグローバルコマンドを登録しました（最大1時間で反映）");
+
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
@@ -106,6 +115,7 @@ client.once("ready", async () => {
     console.warn("⚠️ activity.js が見つかりません（省略可能）");
   }
 });
+
 
 // ✅ Web サーバー（サイト表示）
 const app = express();
