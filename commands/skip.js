@@ -7,11 +7,38 @@ module.exports = {
     .setDescription("現在の曲をスキップします"),
 
   async execute(interaction) {
-    const guildId = interaction.guild.id;
-    const playerData = activePlayers.get(guildId);
-    if (!playerData) return interaction.reply("⚠️ 再生中の曲がありません。");
+    try {
+      const guildId = interaction.guild?.id;
+      const playerData = activePlayers.get(guildId);
 
-    playerData.player.stop(true);
-    await interaction.reply("⏭ 曲をスキップしました。");
+      if (!playerData || !playerData.player) {
+        return interaction.reply({
+          content: "⚠️ 再生中の曲がありません。",
+          ephemeral: true
+        });
+      }
+
+      // 現在の曲を停止（次の曲へ）
+      playerData.player.stop(true);
+
+      await interaction.reply({
+        content: "⏭ 曲をスキップしました。",
+        ephemeral: true
+      });
+      
+    } catch (error) {
+      console.error("❌ /skip 実行中のエラー:", error);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: "⚠️ スキップ中にエラーが発生しました。",
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: "⚠️ スキップ中にエラーが発生しました。",
+          ephemeral: true
+        });
+      }
+    }
   }
 };
