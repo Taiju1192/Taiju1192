@@ -94,21 +94,13 @@ if (!process.env.DISCORD_TOKEN) {
 client.once("ready", async () => {
   console.log(`✅ Botログイン成功: ${client.user.tag}`);
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+
   try {
-    if (process.env.GUILD_ID) {
-      await rest.put(
-        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-        { body: commands }
-      );
-      console.log("✅ GUILD_ID に登録完了");
-    }
-    if (process.env.GUILD_ID2) {
-      await rest.put(
-        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID2),
-        { body: commands }
-      );
-      console.log("✅ GUILD_ID2 に登録完了");
-    }
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: commands }
+    );
+    console.log("🌐 グローバルコマンドとして登録されました（最大1時間で反映）");
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
