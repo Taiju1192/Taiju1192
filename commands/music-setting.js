@@ -11,8 +11,7 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // deferReply は 3秒ルールの対策だが、使うなら必ず editReply に続けること
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: 64 }); // 非公開メッセージ
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId("music_settings")
@@ -46,15 +45,15 @@ module.exports = {
       console.error("❌ music-setting.js エラー:", err);
 
       try {
-        if (interaction.deferred) {
+        if (interaction.deferred || interaction.replied) {
           await interaction.editReply({
             content: "⚠ 設定メニューの表示に失敗しました。",
             components: []
           });
-        } else if (!interaction.replied) {
+        } else {
           await interaction.reply({
             content: "⚠ 設定メニューの表示に失敗しました。",
-            ephemeral: true
+            flags: 64
           });
         }
       } catch (nestedErr) {
