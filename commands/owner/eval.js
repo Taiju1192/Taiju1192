@@ -1,59 +1,30 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  codeBlock
-} = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
 const ALLOWED_USER = '1365228588261052499';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('eval')
-    .setDescription('JavaScriptコードを評価します（開発者専用）')
-    .addStringOption(opt =>
-      opt.setName('code')
-        .setDescription('実行するコード（return を含めると結果が出力されます）')
-        .setRequired(true)
-    ),
+    .setDescription('JavaScriptコードを評価します（開発者専用）'),
 
   async execute(interaction) {
     if (interaction.user.id !== ALLOWED_USER) {
-      return interaction.reply({
-        content: '❌ このコマンドは開発者専用です。',
-        ephemeral: true
-      });
+      return interaction.reply({ content: '❌ このコマンドは開発者専用です。', ephemeral: true });
     }
 
-    const input = interaction.options.getString('code');
+    const modal = new ModalBuilder()
+      .setCustomId('eval_modal')
+      .setTitle('💻 JavaScript 実行コード入力');
 
-    try {
-      const result = await eval(`(async () => { ${input} })()`);
+    const input = new TextInputBuilder()
+      .setCustomId('eval_code')
+      .setLabel('実行するJavaScriptコード（returnを含めると結果表示）')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true);
 
-      const embed = new EmbedBuilder()
-        .setTitle('✅ 実行結果')
-        .addFields(
-          { name: '入力コード', value: codeBlock('js', input) },
-          {
-            name: '結果',
-            value: codeBlock('js', typeof result === 'string'
-              ? result
-              : JSON.stringify(result, null, 2))
-          }
-        )
-        .setColor('Green');
+    const row = new ActionRowBuilder().addComponents(input);
+    modal.addComponents(row);
 
-      await interaction.reply({ embeds: [embed], ephemeral: true });
-
-    } catch (err) {
-      const embed = new EmbedBuilder()
-        .setTitle('❌ 実行中にエラーが発生')
-        .addFields(
-          { name: '入力コード', value: codeBlock('js', input) },
-          { name: 'エラー', value: codeBlock('ts', err.message) }
-        )
-        .setColor('Red');
-
-      await interaction.reply({ embeds: [embed], ephemeral: true });
-    }
+    await interaction.showModal(modal);
   }
 };
