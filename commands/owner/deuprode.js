@@ -3,8 +3,10 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  AttachmentBuilder,
-  ComponentType
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+  AttachmentBuilder
 } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +17,7 @@ const UPLOAD_DIR = path.join(__dirname, '..', '..', 'data', 'uploads');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('deuprode')
-    .setDescription('アップロード済みファイルを表示（開発者専用）'),
+    .setDescription('アップロード済みファイルを表示・削除（開発者専用）'),
 
   async execute(interaction) {
     if (interaction.user.id !== ALLOWED_USER) {
@@ -37,15 +39,15 @@ module.exports = {
     }));
 
     const select = new StringSelectMenuBuilder()
-      .setCustomId('select_uploaded_file')
-      .setPlaceholder('表示するファイルを選択')
+      .setCustomId('select_file')
+      .setPlaceholder('表示・削除するファイルを選択')
       .addOptions(options);
 
     const row = new ActionRowBuilder().addComponents(select);
 
     const embed = new EmbedBuilder()
-      .setTitle('📁 アップロード済みファイル一覧')
-      .setDescription('表示したいファイルを選択してください。')
+      .setTitle('📂 アップロードファイル一覧')
+      .setDescription('表示または削除したいファイルを選んでください。')
       .setColor('Blue');
 
     await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
@@ -59,7 +61,7 @@ module.exports = {
 
     collector.on('collect', async sel => {
       if (sel.user.id !== interaction.user.id) {
-        return sel.reply({ content: '❌ あなたはこの操作を実行できません。', ephemeral: true });
+        return sel.reply({ content: '❌ あなたは操作できません。', ephemeral: true });
       }
 
       const selectedFile = sel.values[0];
@@ -74,24 +76,72 @@ module.exports = {
       const isText = /\.(txt|js|json|md|ts|log)$/i.test(selectedFile);
 
       const previewEmbed = new EmbedBuilder()
-        .setTitle('📄 ファイル内容を表示')
+        .setTitle('📄 ファイル表示 / 削除確認')
         .addFields({ name: 'ファイル名', value: `\`${selectedFile}\`` })
-        .setColor('Green')
+        .setColor('Yellow')
         .setTimestamp();
+
+      const actionRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('confirm_delete')
+          .setLabel('🗑 削除する')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('cancel')
+          .setLabel('キャンセル')
+          .setStyle(ButtonStyle.Secondary)
+      );
 
       if (isImage) {
         const attachment = new AttachmentBuilder(buffer, { name: selectedFile });
         previewEmbed.setImage(`attachment://${selectedFile}`);
-        await sel.reply({ embeds: [previewEmbed], files: [attachment], ephemeral: true });
+        await sel.reply({ embeds: [previewEmbed], files: [attachment], components: [actionRow], ephemeral: true });
       } else if (isText) {
-        const content = buffer.toString('utf-8').slice(0, 1900); // Discordの制限に収める
+        const content = buffer.toString('utf-8').slice(0, 1900);
         previewEmbed.addFields({ name: '内容（先頭）', value: `\`\`\`\n${content}\n\`\`\`` });
-        await sel.reply({ embeds: [previewEmbed], ephemeral: true });
+        await sel.reply({ embeds: [previewEmbed], components: [actionRow], ephemeral: true });
       } else {
+        previewEmbed.addFields({ name: '📎 添付', value: 'この形式は埋め込み表示できません。' });
         const attachment = new AttachmentBuilder(buffer, { name: selectedFile });
-        previewEmbed.addFields({ name: '注意', value: 'このファイル形式は埋め込み表示されません。ダウンロードしてください。' });
-        await sel.reply({ embeds: [previewEmbed], files: [attachment], ephemeral: true });
+        await sel.reply({ embeds: [previewEmbed], files: [attachment], components: [actionRow], ephemeral: true });
       }
+
+      const btnCollector = sel.channel.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 30_000
+      });
+
+      btnCollector.on('collect', async btn => {
+        if (btn.user.id !== interaction.user.id) {
+          return btn.reply({ content: '❌ あなたは実行できません。', ephemeral: true });
+        }
+
+        if (btn.customId === 'confirm_delete') {
+          try {
+            fs.unlinkSync(filePath);
+
+            const resultEmbed = new EmbedBuilder()
+              .setTitle('🗑 削除成功')
+              .setDescription(`ファイル \`${selectedFile}\` を削除しました。`)
+              .setColor('Red')
+              .setTimestamp();
+
+            await btn.update({ embeds: [resultEmbed], components: [] });
+          } catch (err) {
+            await btn.reply({ content: `❌ 削除失敗: ${err.message}`, ephemeral: true });
+          }
+          btnCollector.stop();
+        }
+
+        if (btn.customId === 'cancel') {
+          await btn.update({
+            content: '✅ 削除をキャンセルしました。',
+            embeds: [],
+            components: []
+          });
+          btnCollector.stop();
+        }
+      });
     });
   }
 };
