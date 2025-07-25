@@ -44,19 +44,34 @@ try {
 // ✅ コマンド読み込み
 client.commands = new Collection();
 const commands = [];
-const commandFiles = fs.existsSync("./commands") ? fs.readdirSync("./commands").filter(f => f.endsWith(".js")) : [];
+const commandFiles = fs.existsSync("./commands") ? getAllJsFilesRecursive("./commands") : [];
 
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
+function getAllJsFilesRecursive(dir) {
+  let results = [];
+  const list = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of list) {
+    const filePath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      results.push(...getAllJsFilesRecursive(filePath));
+    } else if (file.name.endsWith(".js")) {
+      results.push(filePath);
+    }
+  }
+  return results;
+}
+
+for (const filePath of commandFiles) {
+  const command = require(filePath);
   if (command.data && command.data.name) {
     client.commands.set(command.data.name, command);
     commands.push(command.data.toJSON());
   } else if (command.name) {
     client.commands.set(command.name, command);
   } else {
-    console.warn(`[WARN] コマンドファイル ${file} は無効な形式です`);
+    console.warn(`[WARN] コマンドファイル ${filePath} は無効な形式です`);
   }
 }
+
 
 // ✅ イベント読み込み
 const eventsPath = path.join(__dirname, "events");
