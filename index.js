@@ -37,41 +37,46 @@ const client = new Client({
 try {
   client.activePlayers = require("./activePlayers");
   console.log("🎵 activePlayers を読み込みました");
-} catch (e) {
+} catch {
   console.warn("⚠️ activePlayers.js が見つかりません（省略可能）");
 }
 
-// ✅ コマンド読み込み
+// ✅ コマンド読み込み（サブフォルダも対応）
 client.commands = new Collection();
 const commands = [];
-const commandFiles = fs.existsSync("./commands") ? getAllJsFilesRecursive("./commands") : [];
 
 function getAllJsFilesRecursive(dir) {
   let results = [];
-  const list = fs.readdirSync(dir, { withFileTypes: true });
-  for (const file of list) {
-    const filePath = path.join(dir, file.name);
-    if (file.isDirectory()) {
-      results.push(...getAllJsFilesRecursive(filePath));
-    } else if (file.name.endsWith(".js")) {
-      results.push(filePath);
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...getAllJsFilesRecursive(fullPath));
+    } else if (entry.name.endsWith(".js")) {
+      results.push(fullPath);
     }
   }
   return results;
 }
 
+const commandFiles = getAllJsFilesRecursive(path.join(__dirname, "commands"));
+
 for (const filePath of commandFiles) {
-  const command = require(filePath);
-  if (command.data && command.data.name) {
-    client.commands.set(command.data.name, command);
-    commands.push(command.data.toJSON());
-  } else if (command.name) {
-    client.commands.set(command.name, command);
-  } else {
-    console.warn(`[WARN] コマンドファイル ${filePath} は無効な形式です`);
+  try {
+    const command = require(filePath);
+    if (command.data && command.data.name) {
+      client.commands.set(command.data.name, command);
+      commands.push(command.data.toJSON());
+    } else if (command.name) {
+      client.commands.set(command.name, command);
+    } else {
+      console.warn(`[WARN] 無効なコマンド形式: ${filePath}`);
+    }
+  } catch (err) {
+    console.error(`❌ コマンドの読み込み失敗: ${filePath}`);
+    console.error(err);
   }
 }
-
 
 // ✅ イベント読み込み
 const eventsPath = path.join(__dirname, "events");
@@ -105,34 +110,29 @@ client.once("ready", async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
   try {
-    // ✅ まず既存のグローバルコマンドを削除
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: [] }
-    );
-    console.log("🧹 既存のグローバルコマンドを削除しました");
+    // ✅ コマンド登録先（グローバル or ギルド限定）
+    const route = process.env.GUILD_ID
+      ? Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID)
+      : Routes.applicationCommands(process.env.CLIENT_ID);
 
-    // ✅ 新しいコマンドを登録
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
-    console.log("🌐 新しいグローバルコマンドを登録しました（最大1時間で反映）");
-
+    // ✅ コマンド上書き登録
+    await rest.put(route, { body: commands });
+    console.log(process.env.GUILD_ID
+      ? "🏠 ギルドコマンドを登録しました"
+      : "🌐 グローバルコマンドを登録しました（最大1時間で反映）");
   } catch (error) {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
 
-  // ✅ アクティビティ設定
+  // ✅ アクティビティ設定（任意）
   try {
     require("./activity")(client);
-  } catch (err) {
+  } catch {
     console.warn("⚠️ activity.js が見つかりません（省略可能）");
   }
 });
 
-
-// ✅ Web サーバー（サイト表示）
+// ✅ Web サーバー（静的サイト）
 const app = express();
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
