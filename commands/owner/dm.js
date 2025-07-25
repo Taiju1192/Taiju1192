@@ -12,6 +12,12 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('dm')
     .setDescription('他ユーザーにDMを送信（管理者専用）')
+    // 必須オプションは先に書く（Discordの仕様）
+    .addStringOption(opt =>
+      opt.setName('message')
+        .setDescription('送信内容')
+        .setRequired(true)
+    )
     .addUserOption(opt =>
       opt.setName('user')
         .setDescription('送信先ユーザー（選択）')
@@ -21,11 +27,6 @@ module.exports = {
       opt.setName('user_id')
         .setDescription('送信先ユーザーID（手動入力）')
         .setRequired(false)
-    )
-    .addStringOption(opt =>
-      opt.setName('message')
-        .setDescription('送信内容')
-        .setRequired(true)
     ),
 
   async execute(interaction) {
