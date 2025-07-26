@@ -1,5 +1,20 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus, StreamType } = require("@discordjs/voice");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder
+} = require("discord.js");
+
+const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  entersState,
+  VoiceConnectionStatus,
+  StreamType
+} = require("@discordjs/voice");
+
 const { spawn } = require("child_process");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -26,6 +41,11 @@ function downloadFile(url) {
       reject(err);
     });
   });
+}
+
+function findTracksByKeyword(keyword) {
+  keyword = keyword.toLowerCase();
+  return tracks.filter(track => track.title.toLowerCase().includes(keyword));
 }
 
 async function createAudioResourceFromSrc(src) {
@@ -75,6 +95,7 @@ async function playNext(guildId, firstTrack = null) {
   try {
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
 
+    // ✅ 音量設定を反映
     if (playerData.volume && resource.volume) {
       resource.volume.setVolume(playerData.volume);
     }
@@ -82,6 +103,7 @@ async function playNext(guildId, firstTrack = null) {
     playerData.player.play(resource);
     playerData.currentAudioPath = audioPath;
 
+    // ✅ リピート処理（再度末尾に追加）
     if (playerData.repeat) {
       playerData.queue.push(nextTrack);
     }
@@ -110,7 +132,7 @@ module.exports = {
     if (!voiceChannel) {
       return interaction.reply({
         content: "🔊 まずボイスチャンネルに参加してください！",
-        flags: 64
+        ephemeral: true
       });
     }
 
@@ -119,12 +141,12 @@ module.exports = {
     if (activePlayers.has(guildId)) {
       return interaction.reply({
         content: "❗ 既に再生中です。止めるには /stop を使ってください。",
-        flags: 64
+        ephemeral: true
       });
     }
 
     try {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply();
 
       const query = interaction.options.getString("query");
       let selectedTrack = null;
@@ -136,7 +158,7 @@ module.exports = {
             src: query
           };
         } else {
-          const matchedTracks = tracks.filter(track => track.title.toLowerCase().includes(query.toLowerCase()));
+          const matchedTracks = findTracksByKeyword(query);
           if (matchedTracks.length === 0) {
             return interaction.editReply(`⚠️ キーワード「${query}」に一致する曲は見つかりませんでした。`);
           } else if (matchedTracks.length === 1) {
@@ -217,6 +239,7 @@ module.exports = {
 
       connection.subscribe(player);
 
+      // ✅ 初期設定に volume と repeat を追加（重要！）
       activePlayers.set(guildId, {
         connection,
         player,
@@ -225,29 +248,25 @@ module.exports = {
         currentAudioPath: null,
         interaction,
         textChannel: interaction.channel,
-        volume: 1.0,
-        repeat: false
+        volume: 1.0,       // ✅ 初期音量
+        repeat: false      // ✅ 初期リピート設定
       });
 
       await playNext(guildId, selectedTrack);
-
       await interaction.editReply("▶️ 再生を開始しました。");
+
     } catch (error) {
       console.error("❌ /start コマンド実行中のエラー:", error);
-
-      const errorMessage = {
-        content: "⚠️ エラーが発生しました。再生できませんでした。",
-        ephemeral: true
-      };
-
-      try {
-        if (interaction.deferred || interaction.replied) {
-          await interaction.followUp(errorMessage);
-        } else {
-          await interaction.reply(errorMessage);
-        }
-      } catch (err) {
-        console.error("⚠️ エラーメッセージの送信にも失敗:", err);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: "⚠️ エラーが発生しました。再生できませんでした。",
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: "⚠️ エラーが発生しました。再生できませんでした。",
+          ephemeral: true
+        });
       }
     }
   }
