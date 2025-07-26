@@ -1,5 +1,20 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus, StreamType } = require("@discordjs/voice");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder
+} = require("discord.js");
+
+const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  entersState,
+  VoiceConnectionStatus,
+  StreamType
+} = require("@discordjs/voice");
+
 const { spawn } = require("child_process");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -22,10 +37,38 @@ function downloadFile(url) {
       res.pipe(file);
       file.on("finish", () => file.close(() => resolve(tempPath)));
     }).on("error", (err) => {
-      fs.unlink(tempPath, () => {});  // Clean up the temporary file
+      fs.unlink(tempPath, () => {});
       reject(err);
     });
   });
+}
+
+async function createAudioResourceFromSrc(src) {
+  let audioPath = src;
+  if (audioPath.startsWith("http")) {
+    audioPath = await downloadFile(audioPath);
+  }
+
+  const ffmpeg = spawn(ffmpegPath, [
+    "-i", audioPath,
+    "-vn",
+    "-f", "s16le",
+    "-ar", "48000",
+    "-ac", "2",
+    "pipe:1"
+  ], { stdio: ["pipe", "pipe", "pipe"] });
+
+  await new Promise((resolve, reject) => {
+    ffmpeg.stdout.once("readable", resolve);
+    ffmpeg.once("error", reject);
+  });
+
+  const resource = createAudioResource(ffmpeg.stdout, {
+    inputType: StreamType.Raw,
+    inlineVolume: true
+  });
+
+  return { resource, audioPath };
 }
 
 async function playNext(guildId, firstTrack = null) {
@@ -47,7 +90,6 @@ async function playNext(guildId, firstTrack = null) {
   try {
     const { resource, audioPath } = await createAudioResourceFromSrc(nextTrack.src);
 
-    // 音量設定を反映
     if (playerData.volume && resource.volume) {
       resource.volume.setVolume(playerData.volume);
     }
@@ -55,7 +97,6 @@ async function playNext(guildId, firstTrack = null) {
     playerData.player.play(resource);
     playerData.currentAudioPath = audioPath;
 
-    // リピート処理
     if (playerData.repeat) {
       playerData.queue.push(nextTrack);
     }
@@ -110,7 +151,7 @@ module.exports = {
             src: query
           };
         } else {
-          const matchedTracks = findTracksByKeyword(query);
+          const matchedTracks = tracks.filter(track => track.title.toLowerCase().includes(query.toLowerCase()));
           if (matchedTracks.length === 0) {
             return interaction.editReply(`⚠️ キーワード「${query}」に一致する曲は見つかりませんでした。`);
           } else if (matchedTracks.length === 1) {
@@ -165,17 +206,7 @@ module.exports = {
         adapterCreator: voiceChannel.guild.voiceAdapterCreator,
       });
 
-      try {
-        await entersState(connection, VoiceConnectionStatus.Ready, 30_000); // 音楽接続の準備ができるまで最大30秒待機
-      } catch (error) {
-        console.error("❌ ボイスチャンネル接続エラー:", error);
-        await interaction.editReply({
-          content: "⚠️ ボイスチャンネルへの接続に失敗しました。",
-          ephemeral: true
-        });
-        return;
-      }
-
+      await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
       const player = createAudioPlayer();
 
       player.on(AudioPlayerStatus.Idle, async () => {
@@ -201,7 +232,6 @@ module.exports = {
 
       connection.subscribe(player);
 
-      // 初期設定に volume と repeat を追加
       activePlayers.set(guildId, {
         connection,
         player,
@@ -210,13 +240,19 @@ module.exports = {
         currentAudioPath: null,
         interaction,
         textChannel: interaction.channel,
-        volume: 1.0,       // 初期音量
-        repeat: false      // 初期リピート設定
+        volume: 1.0,
+        repeat: false
       });
 
       await playNext(guildId, selectedTrack);
 
-      await interaction.editReply("▶️ 再生を開始しました。");
+      try {
+        await interaction.editReply("▶️ 再生を開始しました。");
+      } catch (err) {
+        if (err.code !== 40060) {
+          console.error("❌ editReply に失敗しました:", err);
+        }
+      }
     } catch (error) {
       console.error("❌ /start コマンド実行中のエラー:", error);
 
