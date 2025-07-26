@@ -1,20 +1,5 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  StringSelectMenuBuilder
-} = require("discord.js");
-
-const {
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  entersState,
-  VoiceConnectionStatus,
-  StreamType
-} = require("@discordjs/voice");
-
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus, StreamType } = require("@discordjs/voice");
 const { spawn } = require("child_process");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -139,7 +124,7 @@ module.exports = {
     }
 
     try {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
 
       const query = interaction.options.getString("query");
       let selectedTrack = null;
@@ -246,13 +231,7 @@ module.exports = {
 
       await playNext(guildId, selectedTrack);
 
-      try {
-        await interaction.editReply("▶️ 再生を開始しました。");
-      } catch (err) {
-        if (err.code !== 40060) {
-          console.error("❌ editReply に失敗しました:", err);
-        }
-      }
+      await interaction.editReply("▶️ 再生を開始しました。");
     } catch (error) {
       console.error("❌ /start コマンド実行中のエラー:", error);
 
