@@ -1,8 +1,4 @@
-const {
-  SlashCommandBuilder,
-  ActionRowBuilder,
-  StringSelectMenuBuilder
-} = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,27 +16,31 @@ module.exports = {
           {
             label: "音量を変更",
             value: "volume",
-            emoji: "🔊"
+            emoji: "🔊",
           },
           {
-            label: "リピート切替",
+            label: "スピードを変更",
+            value: "speed",
+            emoji: "⏩",
+          },
+          {
+            label: "リピート設定",
             value: "repeat",
-            emoji: "🔁"
+            emoji: "🔁",
           },
           {
-            label: "キューをシャッフル",
+            label: "シャッフル設定",
             value: "shuffle",
-            emoji: "🔀"
-          }
+            emoji: "🔀",
+          },
         ]);
 
       const row = new ActionRowBuilder().addComponents(menu);
 
       await interaction.editReply({
         content: "🎵 設定を選んでください：",
-        components: [row]
+        components: [row],
       });
-
     } catch (err) {
       console.error("❌ music-setting.js エラー:", err);
 
@@ -48,17 +48,17 @@ module.exports = {
         if (interaction.deferred || interaction.replied) {
           await interaction.editReply({
             content: "⚠ 設定メニューの表示に失敗しました。",
-            components: []
+            components: [],
           });
         } else {
           await interaction.reply({
             content: "⚠ 設定メニューの表示に失敗しました。",
-            flags: 64
+            flags: 64,
           });
         }
       } catch (nestedErr) {
         console.warn("⚠ 二重応答を防止しました");
       }
     }
-  }
+  },
 };
