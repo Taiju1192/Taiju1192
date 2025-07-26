@@ -7,6 +7,10 @@ module.exports = async function musicSetting(interaction) {
     const selected = interaction.values[0];
     const playerData = activePlayers.get(interaction.guildId);
 
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+
     if (selected === "volume") {
       const modal = new ModalBuilder()
         .setCustomId("set_volume_modal")
