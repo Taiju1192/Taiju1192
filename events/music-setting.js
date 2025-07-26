@@ -7,6 +7,11 @@ module.exports = async function musicSetting(interaction) {
     const selected = interaction.values[0];
     const playerData = activePlayers.get(interaction.guildId);
 
+    // 応答の遅延処理
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+
     if (selected === "volume") {
       const modal = new ModalBuilder()
         .setCustomId("set_volume_modal")
@@ -22,9 +27,7 @@ module.exports = async function musicSetting(interaction) {
       const row = new ActionRowBuilder().addComponents(input);
       modal.addComponents(row);
 
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.showModal(modal);
-      }
+      await interaction.showModal(modal);
       return true;
     }
 
@@ -41,10 +44,9 @@ module.exports = async function musicSetting(interaction) {
         ]);
 
       const row = new ActionRowBuilder().addComponents(speedMenu);
-      await interaction.reply({
+      await interaction.update({
         content: "再生速度を選んでください:",
         components: [row],
-        ephemeral: true,
       });
       return true;
     }
@@ -109,38 +111,6 @@ module.exports = async function musicSetting(interaction) {
 
     await interaction.reply({
       content: `🔊 音量を \`${volume}\` に設定しました。`,
-      ephemeral: true,
-    });
-    return true;
-  }
-
-  // スピード選択
-  if (interaction.isStringSelectMenu() && interaction.customId === "set_speed_select") {
-    const selectedSpeed = parseFloat(interaction.values[0]);
-    if (isNaN(selectedSpeed) || selectedSpeed < 0.5 || selectedSpeed > 2) {
-      await interaction.reply({
-        content: "❌ 無効なスピード。0.5倍〜2倍の範囲で設定してください。",
-        ephemeral: true,
-      });
-      return true;
-    }
-
-    const playerData = activePlayers.get(interaction.guildId);
-    if (!playerData || !playerData.player?.state?.resource) {
-      await interaction.reply({
-        content: "⚠ 現在再生中の曲がありません。",
-        ephemeral: true,
-      });
-      return true;
-    }
-
-    // スピード設定処理（音楽ライブラリやプレイヤーによって異なる）
-    const connection = playerData.player.state.resource;
-    const audioPlayer = connection.player;
-    audioPlayer.setPlaybackRate(selectedSpeed);
-
-    await interaction.reply({
-      content: `⏩ 再生スピードを \`${selectedSpeed}倍\` に設定しました。`,
       ephemeral: true,
     });
     return true;
