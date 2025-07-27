@@ -40,6 +40,7 @@ module.exports = {
         console.log('Custom ID:', interaction.customId); // customId全体を表示
         console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
+        // logChannelId が 'null' または 'undefined' であれば、無効とみなして処理をスキップ
         if (!logChannelId || logChannelId === 'null') {
           console.warn('Log Channel ID is invalid or not provided.');
           return;
@@ -52,7 +53,7 @@ module.exports = {
         const role = guild.roles.cache.get(roleId);
         const user = guild.members.cache.get(userIdMeta);
         const adminRole = guild.roles.cache.get(adminRoleId);
-        const logChannel = guild.channels.cache.get(logChannelId);
+        const logChannel = guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
 
         if (!logChannel) {
           console.warn('Log channel could not be found or is invalid.');
@@ -109,6 +110,7 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
+        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
           console.log('Sending log to:', logChannel.id); 
           const logEmbed = new EmbedBuilder()
@@ -126,6 +128,60 @@ module.exports = {
         console.error('❌ チケット作成エラー:', err);
       } finally {
         activeTicketUsers.delete(userId);
+      }
+    }
+
+    // 🗑 チケット削除ボタン
+    if (interaction.isButton() && interaction.customId.startsWith('ticket-close-')) {
+      const channelId = interaction.channelId;
+      if (activeTicketChannels.has(channelId) || deletedChannels.has(channelId)) return;
+      activeTicketChannels.add(channelId);
+
+      try {
+        // 応答を早めに送信（インタラクションが失効する前に）
+        await interaction.deferUpdate();
+
+        const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
+        const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+        const hasAdminRole = adminRoleId !== 'null' && interaction.member.roles.cache.has(adminRoleId);
+
+        if (!(isAdmin || hasAdminRole)) return;
+
+        const notifyEmbed = new EmbedBuilder()
+          .setTitle('🗑 チャンネル削除')
+          .setDescription('このチャンネルは `1秒後` に削除されます。')
+          .setColor(0xffcc00)
+          .setTimestamp();
+
+        await interaction.channel.send({ embeds: [notifyEmbed] });
+
+        // ログ送信（チケット削除時）
+        const logChannel = interaction.guild.channels.cache.get(logChannelId);
+        if (logChannel?.isTextBased()) {
+          console.log('Sending close log to:', logChannel.id); 
+          const closeLog = new EmbedBuilder()
+            .setTitle('❌ チケット削除')
+            .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。`)
+            .setColor(0xff5555)
+            .setTimestamp();
+
+          await logChannel.send({ embeds: [closeLog] });
+        } else {
+          console.warn('Log channel is not valid or not a text channel.');
+        }
+
+        setTimeout(async () => {
+          if (!deletedChannels.has(channelId)) {
+            deletedChannels.add(channelId);
+            await interaction.channel?.delete().catch(err => {
+              console.error('❌ チャンネル削除失敗:', err.message);
+            });
+          }
+        }, 1000);
+      } catch (err) {
+        console.error('❌ チケット削除エラー:', err);
+      } finally {
+        activeTicketChannels.delete(channelId);
       }
     }
   }
