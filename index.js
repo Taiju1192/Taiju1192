@@ -41,14 +41,6 @@ try {
   console.warn("⚠️ activePlayers.js が見つかりません（省略可能）");
 }
 
-//prefix-handler 読み込み
-try {
-  client.activePlayers = require("./prefix-handler");
-  console.log("🎵 prefix-handler を読み込みました");
-} catch {
-  console.warn("⚠️ prefix-handler.js が見つかりません（省略可能）");
-}
-
 // ✅ コマンド読み込み（サブフォルダも対応）
 client.commands = new Collection();
 const commands = [];
