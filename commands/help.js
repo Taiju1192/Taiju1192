@@ -25,7 +25,6 @@ const helpPages = [
     .setTitle("🎵 音楽Botコマンド一覧 (2/2)")
     .setDescription(`
 \`\`\`
-/music-setting : 音量、リピート、シャッフルなどを設定。
 /help または m!help : このヘルプを表示します。
 全てのコマンドは正しい日本語で明確に表記されています。
 \`\`\`
