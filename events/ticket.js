@@ -36,10 +36,12 @@ module.exports = {
           await interaction.deferUpdate();
         }
 
+        // customIdを分割
         const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
           interaction.customId.split('-');
-
-        console.log('Log Channel ID:', logChannelId); // logChannelIdの確認
+        
+        console.log('Custom ID:', interaction.customId); // customId全体を表示
+        console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
         const guild = interaction.guild;
         const category =
@@ -177,7 +179,7 @@ module.exports = {
       } catch (err) {
         console.error('❌ チケット削除エラー:', err);
       } finally {
-        activeTicketChannels.delete(channelId);  // ここを閉じるために括弧を追加
+        activeTicketChannels.delete(channelId);
       }
     }
   }
