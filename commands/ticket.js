@@ -45,10 +45,14 @@ module.exports = {
     .addRoleOption(opt =>
       opt.setName('adminrole')
         .setDescription('チケットを削除できる管理ロール')
+    )
+    .addChannelOption(opt =>
+      opt.setName('logchannel')
+        .setDescription('チケット作成・削除のログを送信するチャンネル')
+        .addChannelTypes(ChannelType.GuildText)
     ),
-
+  
   async execute(interaction) {
-    // 実行者が管理者権限を持っているかチェック
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({
         content: '❌ このコマンドは管理者のみ使用できます。',
@@ -64,6 +68,7 @@ module.exports = {
     const role = interaction.options.getRole('role');
     const user = interaction.options.getUser('user');
     const adminRole = interaction.options.getRole('adminrole');
+    const logChannel = interaction.options.getChannel('logchannel'); // 新しく追加
 
     const embed = new EmbedBuilder()
       .setTitle(title)
@@ -76,7 +81,7 @@ module.exports = {
     }
 
     const ticketButton = new ButtonBuilder()
-      .setCustomId(`ticket-${Date.now()}-${category?.id || 'null'}-${role?.id || 'null'}-${user?.id || 'null'}-${adminRole?.id || 'null'}`)
+      .setCustomId(`ticket-${Date.now()}-${category?.id || 'null'}-${role?.id || 'null'}-${user?.id || 'null'}-${adminRole?.id || 'null'}-${logChannel?.id || 'null'}`) // logChannelをIDとして追加
       .setLabel(buttonLabel)
       .setStyle(ButtonStyle.Primary);
 
