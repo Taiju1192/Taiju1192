@@ -31,8 +31,9 @@ module.exports = {
       }
 
       try {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferUpdate().catch(() => {});
+        // すでに応答があったかどうかを確認
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.deferUpdate();
         }
 
         const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
@@ -131,8 +132,9 @@ module.exports = {
       activeTicketChannels.add(channelId);
 
       try {
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.deferUpdate().catch(() => {});
+        // すでに応答があったかどうかを確認
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.deferUpdate();
         }
 
         const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
@@ -171,6 +173,11 @@ module.exports = {
               console.error('❌ チャンネル削除失敗:', err.message);
             });
           }
+        }, 1000);
+      } catch (err) {
+        console.error('❌ チケット削除エラー:', err);
+      } finally {
+        activeTicketChannels.delete(channelId
         }, 1000);
       } catch (err) {
         console.error('❌ チケット削除エラー:', err);
