@@ -27,17 +27,22 @@ module.exports = {
       // 応答を遅延させ、後でメッセージを削除する
       await interaction.deferReply();
 
-      const deleted = await interaction.channel.bulkDelete(count, true).catch(err => {
-        console.error("削除失敗:", err);
-        return null;
-      });
+      // メッセージ削除
+      const messages = await interaction.channel.messages.fetch({ limit: count });
 
-      if (!deleted || deleted.size === 0) {
+      // BOTのメッセージを除外
+      const filteredMessages = messages.filter(msg => !msg.author.bot);
+
+      // メッセージが削除できるか確認
+      if (filteredMessages.size === 0) {
         return await interaction.followUp({
-          content: "⚠ メッセージの削除に失敗しました（14日以上前のメッセージは削除不可です）。",
+          content: "⚠ 削除するメッセージがありません（BOTのメッセージは削除しません）。",
           ephemeral: true
         });
       }
+
+      // メッセージを一括削除
+      const deleted = await interaction.channel.bulkDelete(filteredMessages, true);
 
       // 削除成功のログ用Embedを作成
       const successEmbed = new EmbedBuilder()
