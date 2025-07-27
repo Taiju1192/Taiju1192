@@ -1,12 +1,4 @@
-const {
-  Events,
-  EmbedBuilder,
-  PermissionFlagsBits,
-  ChannelType,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
-} = require('discord.js');
+const { Events, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const activeTicketUsers = new Set();
 const activeTicketChannels = new Set();
@@ -16,7 +8,11 @@ module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
     // 🎫 チケット作成ボタン
-    if (interaction.isButton() && interaction.customId.startsWith('ticket-') && !interaction.customId.startsWith('ticket-close-')) {
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith('ticket-') &&
+      !interaction.customId.startsWith('ticket-close-')
+    ) {
       const userId = interaction.user.id;
       if (activeTicketUsers.has(userId)) return;
       activeTicketUsers.add(userId);
@@ -39,13 +35,17 @@ module.exports = {
           await interaction.deferUpdate().catch(() => {});
         }
 
-        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] = interaction.customId.split('-');
+        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
+          interaction.customId.split('-');
+
         const guild = interaction.guild;
-        const category = guild.channels.cache.get(categoryId) || guild.channels.cache.find(c => c.type === ChannelType.GuildCategory);
+        const category =
+          guild.channels.cache.get(categoryId) ||
+          guild.channels.cache.find(c => c.type === ChannelType.GuildCategory);
         const role = guild.roles.cache.get(roleId);
         const user = guild.members.cache.get(userIdMeta);
         const adminRole = guild.roles.cache.get(adminRoleId);
-        const logChannel = guild.channels.cache.get(logChannelId); // ログチャンネルを取得
+        const logChannel = guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
 
         const displayName = interaction.member.displayName.replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥()（）ー・\-\_\s]/g, '');
         const channelName = `🎫｜${displayName}（${interaction.user.username}）`.slice(0, 100);
@@ -89,7 +89,7 @@ module.exports = {
           .setTimestamp();
 
         const deleteButton = new ButtonBuilder()
-          .setCustomId(`ticket-close-${interaction.user.id}-${adminRole?.id || 'null'}`)
+          .setCustomId(`ticket-close-${interaction.user.id}-${adminRole?.id || 'null'}-${logChannelId}`) // logChannelIdも含めておく
           .setLabel('チケット削除')
           .setStyle(ButtonStyle.Danger);
 
@@ -97,7 +97,7 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
-        // ログチャンネルに通知（指定されたチャンネル）
+        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
           const logEmbed = new EmbedBuilder()
             .setTitle('🎫 チケット作成')
@@ -126,7 +126,7 @@ module.exports = {
           await interaction.deferUpdate().catch(() => {});
         }
 
-        const [, , ticketOwnerId, adminRoleId] = interaction.customId.split('-');
+        const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
         const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
         const hasAdminRole = adminRoleId !== 'null' && interaction.member.roles.cache.has(adminRoleId);
 
@@ -141,7 +141,7 @@ module.exports = {
         await interaction.channel.send({ embeds: [notifyEmbed] });
 
         // ログ送信（チケット削除時）
-        const logChannel = interaction.guild.channels.cache.get(logChannelId); // ログチャンネルを取得
+        const logChannel = interaction.guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
         if (logChannel?.isTextBased()) {
           const closeLog = new EmbedBuilder()
             .setTitle('❌ チケット削除')
