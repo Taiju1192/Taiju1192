@@ -4,7 +4,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('vending-set')
-    .setDescription('自販機の設定を行います')
+    .setDescription('自販機の設定を行います。')
     .addStringOption(option => 
       option.setName('action')
         .setDescription('アクションを選んでください（add, remove, price, refill）')
