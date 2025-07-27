@@ -34,8 +34,7 @@ module.exports = {
         // 応答を早めに送信（インタラクションが失効する前に）
         await interaction.deferUpdate();
 
-        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
-          interaction.customId.split('-');
+        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] = interaction.customId.split('-');
 
         console.log('Custom ID:', interaction.customId); // customId全体を表示
         console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
@@ -110,7 +109,6 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
-        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
           console.log('Sending log to:', logChannel.id); 
           const logEmbed = new EmbedBuilder()
@@ -138,7 +136,6 @@ module.exports = {
       activeTicketChannels.add(channelId);
 
       try {
-        // 応答を早めに送信（インタラクションが失効する前に）
         await interaction.deferUpdate();
 
         const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
@@ -155,7 +152,6 @@ module.exports = {
 
         await interaction.channel.send({ embeds: [notifyEmbed] });
 
-        // ログ送信（チケット削除時）
         const logChannel = interaction.guild.channels.cache.get(logChannelId);
         if (logChannel?.isTextBased()) {
           console.log('Sending close log to:', logChannel.id); 
