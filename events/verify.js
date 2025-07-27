@@ -28,9 +28,9 @@ module.exports = {
       }
     }
 
-    // ボタン処理（例: verify-ロールID）
+    // ボタン処理（例: verify-ロールID-ログチャンネルID）
     if (interaction.isButton()) {
-      const [prefix, roleId] = interaction.customId.split("-");
+      const [prefix, roleId, logChannelId] = interaction.customId.split("-");
 
       if (prefix !== "verify") return;
 
@@ -71,7 +71,7 @@ module.exports = {
         });
 
         // ログチャンネルに認証成功の通知を送信
-        const logChannel = interaction.options.getChannel('logchannel'); // 取得したログチャンネルを使用
+        const logChannel = interaction.guild.channels.cache.get(logChannelId); // ログチャンネルIDを使用
         if (logChannel?.isTextBased()) {
           const logEmbed = new EmbedBuilder()
             .setTitle('🎫 認証完了')
