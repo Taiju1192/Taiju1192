@@ -38,6 +38,8 @@ module.exports = {
         const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
           interaction.customId.split('-');
 
+        console.log('Log Channel ID:', logChannelId); // logChannelIdの確認
+
         const guild = interaction.guild;
         const category =
           guild.channels.cache.get(categoryId) ||
@@ -46,6 +48,10 @@ module.exports = {
         const user = guild.members.cache.get(userIdMeta);
         const adminRole = guild.roles.cache.get(adminRoleId);
         const logChannel = guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
+
+        if (!logChannel) {
+          console.warn('Log channel could not be found or is invalid.');
+        }
 
         const displayName = interaction.member.displayName.replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥()（）ー・\-\_\s]/g, '');
         const channelName = `🎫｜${displayName}（${interaction.user.username}）`.slice(0, 100);
