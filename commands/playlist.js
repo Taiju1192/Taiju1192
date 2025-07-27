@@ -74,6 +74,7 @@ module.exports = {
           value: String(i + page * TRACKS_PER_PAGE),
         })));
 
+
       const row1 = new ActionRowBuilder().addComponents(selectMenu);
       const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("prev_page").setLabel("⬅ 前").setStyle(ButtonStyle.Secondary).setDisabled(page === 0),
@@ -94,7 +95,13 @@ module.exports = {
       if (i.customId === "prev_page") currentPage--;
       else if (i.customId === "next_page") currentPage++;
       const { embed, components } = updateComponents(currentPage);
-      await i.update({ embeds: [embed], components });
+
+      // インタラクションが期限切れになっていないかチェック
+      try {
+        await i.update({ embeds: [embed], components });
+      } catch (error) {
+        console.error("インタラクションが無効になっています:", error);
+      }
     });
 
     menuCollector.on("collect", async i => {
