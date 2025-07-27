@@ -27,7 +27,6 @@ module.exports = {
       // 応答を遅延させ、後でメッセージを削除する
       await interaction.deferReply();
 
-      // メッセージ削除
       const deleted = await interaction.channel.bulkDelete(count, true).catch(err => {
         console.error("削除失敗:", err);
         return null;
