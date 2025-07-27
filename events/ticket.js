@@ -43,6 +43,12 @@ module.exports = {
         console.log('Custom ID:', interaction.customId); // customId全体を表示
         console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
+        // logChannelId が 'null' または 'undefined' であれば、無効とみなして処理をスキップ
+        if (!logChannelId || logChannelId === 'null') {
+          console.warn('Log Channel ID is invalid or not provided.');
+          return;
+        }
+
         const guild = interaction.guild;
         const category =
           guild.channels.cache.get(categoryId) ||
@@ -54,6 +60,7 @@ module.exports = {
 
         if (!logChannel) {
           console.warn('Log channel could not be found or is invalid.');
+          return;
         }
 
         const displayName = interaction.member.displayName.replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥()（）ー・\-\_\s]/g, '');
