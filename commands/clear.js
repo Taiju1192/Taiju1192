@@ -23,14 +23,16 @@ module.exports = {
       });
     }
 
-    try {
-      // 応答を遅延させ、後でメッセージを削除する
+    // 応答がまだ送信されていない場合、遅延応答を送る
+    if (!interaction.deferred && !interaction.replied) {
       await interaction.deferReply();
+    }
 
+    try {
       // メッセージ削除（全てのメッセージを取得）
       const messages = await interaction.channel.messages.fetch({ limit: count });
 
-      // BOTのメッセージを除外し、実際に削除するメッセージを作成
+      // BOTのメッセージを除外
       const filteredMessages = messages.filter(msg => !msg.author.bot);
 
       // もしBOTのメッセージが全てであった場合、削除できるメッセージがない
