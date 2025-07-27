@@ -1,4 +1,12 @@
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  ChannelType,
+  PermissionFlagsBits,
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder
+} = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,15 +45,10 @@ module.exports = {
     .addRoleOption(opt =>
       opt.setName('adminrole')
         .setDescription('チケットを削除できる管理ロール')
-    )
-    .addChannelOption(opt =>
-      opt.setName('logchannel')
-        .setDescription('チケット作成・削除のログを送信するチャンネル')
-        .addChannelTypes(ChannelType.GuildText)
     ),
 
   async execute(interaction) {
-    // 管理者チェック
+    // 実行者が管理者権限を持っているかチェック
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
       return interaction.reply({
         content: '❌ このコマンドは管理者のみ使用できます。',
@@ -61,7 +64,6 @@ module.exports = {
     const role = interaction.options.getRole('role');
     const user = interaction.options.getUser('user');
     const adminRole = interaction.options.getRole('adminrole');
-    const logChannel = interaction.options.getChannel('logchannel');
 
     const embed = new EmbedBuilder()
       .setTitle(title)
@@ -73,17 +75,8 @@ module.exports = {
       embed.setImage(image.url);
     }
 
-    // customIdの長さを制限するために、必要最低限の情報だけを使う
-    const customId = `ticket-${category?.id?.slice(0, 6) || 'null'}-${role?.id?.slice(0, 6) || 'null'}-${adminRole?.id?.slice(0, 6) || 'null'}-${logChannel?.id?.slice(0, 6) || 'null'}`;
-
-    // customIdが100文字を超える場合、切り捨てる
-    const maxLength = 100;
-    if (customId.length > maxLength) {
-      customId = customId.slice(0, maxLength);
-    }
-
     const ticketButton = new ButtonBuilder()
-      .setCustomId(customId) // 短縮された customId をセット
+      .setCustomId(`ticket-${Date.now()}-${category?.id || 'null'}-${role?.id || 'null'}-${user?.id || 'null'}-${adminRole?.id || 'null'}`)
       .setLabel(buttonLabel)
       .setStyle(ButtonStyle.Primary);
 
