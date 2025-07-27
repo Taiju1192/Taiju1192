@@ -1,8 +1,4 @@
-const { Events, EmbedBuilder, PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-
-const activeTicketUsers = new Set();
-const activeTicketChannels = new Set();
-const deletedChannels = new Set();
+const { Events, EmbedBuilder, Colors } = require('discord.js');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -31,15 +27,16 @@ module.exports = {
       }
 
       try {
-        // 応答を早めに送信（インタラクションが失効する前に）
+        // すでに応答があったかどうかを確認
         await interaction.deferUpdate();
 
-        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] = interaction.customId.split('-');
+        // customIdを分割
+        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
+          interaction.customId.split('-');
 
         console.log('Custom ID:', interaction.customId); // customId全体を表示
         console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
-        // logChannelId が 'null' または 'undefined' であれば、無効とみなして処理をスキップ
         if (!logChannelId || logChannelId === 'null') {
           console.warn('Log Channel ID is invalid or not provided.');
           return;
@@ -97,7 +94,7 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setTitle('📉 お問い合わせ')
           .setDescription('お問い合わせありがとうございます。\n内容を送信後、管理者をお待ちください。')
-          .setColor(0x2ecc71)
+          .setColor(Colors.Green)
           .setTimestamp();
 
         const deleteButton = new ButtonBuilder()
@@ -109,12 +106,12 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
+        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
-          console.log('Sending log to:', logChannel.id); 
           const logEmbed = new EmbedBuilder()
             .setTitle('🎫 チケット作成')
             .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。`)
-            .setColor(0x00bfff)
+            .setColor(Colors.Blue)
             .setTimestamp();
 
           await logChannel.send({ embeds: [logEmbed] });
@@ -136,6 +133,7 @@ module.exports = {
       activeTicketChannels.add(channelId);
 
       try {
+        // すでに応答があったかどうかを確認
         await interaction.deferUpdate();
 
         const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
@@ -147,18 +145,17 @@ module.exports = {
         const notifyEmbed = new EmbedBuilder()
           .setTitle('🗑 チャンネル削除')
           .setDescription('このチャンネルは `1秒後` に削除されます。')
-          .setColor(0xffcc00)
+          .setColor(Colors.Yellow)
           .setTimestamp();
 
         await interaction.channel.send({ embeds: [notifyEmbed] });
 
         const logChannel = interaction.guild.channels.cache.get(logChannelId);
         if (logChannel?.isTextBased()) {
-          console.log('Sending close log to:', logChannel.id); 
           const closeLog = new EmbedBuilder()
             .setTitle('❌ チケット削除')
             .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。`)
-            .setColor(0xff5555)
+            .setColor(Colors.Red)
             .setTimestamp();
 
           await logChannel.send({ embeds: [closeLog] });
