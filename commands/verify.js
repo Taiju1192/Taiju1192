@@ -36,6 +36,12 @@ module.exports = {
       option
         .setName('image')
         .setDescription('埋め込み画像')
+    )
+    .addChannelOption(option =>
+      option
+        .setName('logchannel')
+        .setDescription('認証成功のログを送信するチャンネル')
+        .addChannelTypes(0) // `0` はテキストチャンネル
     ),
 
   async execute(interaction) {
@@ -52,6 +58,7 @@ module.exports = {
     const description = interaction.options.getString('description') || `以下のボタンを押すことで ${role} が付与されます。`;
     const buttonLabel = interaction.options.getString('button') || '認証';
     const image = interaction.options.getAttachment('image');
+    const logChannel = interaction.options.getChannel('logchannel'); // ログチャンネル取得
 
     const colors = [0xff5733, 0x33ff57, 0x3357ff, 0xff33a6, 0x33fff3, 0xffa833, 0xa833ff];
     const color = colors[Math.floor(Math.random() * colors.length)];
@@ -77,5 +84,16 @@ module.exports = {
       embeds: [embed],
       components: [row]
     });
+
+    // ログチャンネルに通知（指定されたチャンネル）
+    if (logChannel?.isTextBased()) {
+      const logEmbed = new EmbedBuilder()
+        .setTitle('🎫 認証パネル作成')
+        .setDescription(`👤 <@${interaction.user.id}> が認証パネルを作成しました。`)
+        .setColor(0x00bfff)
+        .setTimestamp();
+
+      await logChannel.send({ embeds: [logEmbed] });
+    }
   }
 };
