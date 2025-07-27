@@ -50,8 +50,11 @@ module.exports = {
         });
       }
 
-      // ロール付与処理
+      // インタラクションを遅延応答
       try {
+        await interaction.deferUpdate();
+
+        // ロール付与処理
         await interaction.member.roles.add(role);
 
         const embed = new EmbedBuilder()
@@ -65,7 +68,7 @@ module.exports = {
             iconURL: interaction.user.displayAvatarURL({ dynamic: true }),
           });
 
-        await interaction.reply({
+        await interaction.followUp({
           embeds: [embed],
           ephemeral: true,
         });
@@ -86,7 +89,7 @@ module.exports = {
         console.error("❌ ロール付与失敗:", err);
 
         try {
-          await interaction.reply({
+          await interaction.followUp({
             content: "❌ ロールを付与できませんでした。",
             ephemeral: true,
           });
