@@ -177,12 +177,7 @@ module.exports = {
       } catch (err) {
         console.error('❌ チケット削除エラー:', err);
       } finally {
-        activeTicketChannels.delete(channelId
-        }, 1000);
-      } catch (err) {
-        console.error('❌ チケット削除エラー:', err);
-      } finally {
-        activeTicketChannels.delete(channelId);
+        activeTicketChannels.delete(channelId);  // ここを閉じるために括弧を追加
       }
     }
   }
