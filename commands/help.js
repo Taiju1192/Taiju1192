@@ -12,10 +12,9 @@ const helpPages = [
     .setTitle("🎵 音楽Botコマンド一覧 (1/2)")
     .setDescription(`
 \`\`\`
-/start または m!start : 音楽を再生します。
-/stop または m!stop : 音楽を停止します。
-/skip または m!skip : 曲をスキップします。
-/playlist : 曲一覧を表示して選択再生。
+/start : 音楽を再生します。
+/stop : 音楽を停止します。
+/skip : 曲をスキップします。
 /request : 管理者にリクエストを送信。
 \`\`\`
 `)
