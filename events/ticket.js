@@ -31,8 +31,8 @@ module.exports = {
       }
 
       try {
-        // 応答を早めに送信する
-        await interaction.deferUpdate();  // インタラクションの応答を最初に行う
+        // 応答を早めに送信（インタラクションが失効する前に）
+        await interaction.deferUpdate();
 
         const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
           interaction.customId.split('-');
@@ -40,7 +40,6 @@ module.exports = {
         console.log('Custom ID:', interaction.customId); // customId全体を表示
         console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
-        // logChannelId が 'null' または 'undefined' であれば、無効とみなして処理をスキップ
         if (!logChannelId || logChannelId === 'null') {
           console.warn('Log Channel ID is invalid or not provided.');
           return;
@@ -53,7 +52,7 @@ module.exports = {
         const role = guild.roles.cache.get(roleId);
         const user = guild.members.cache.get(userIdMeta);
         const adminRole = guild.roles.cache.get(adminRoleId);
-        const logChannel = guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
+        const logChannel = guild.channels.cache.get(logChannelId);
 
         if (!logChannel) {
           console.warn('Log channel could not be found or is invalid.');
@@ -102,7 +101,7 @@ module.exports = {
           .setTimestamp();
 
         const deleteButton = new ButtonBuilder()
-          .setCustomId(`ticket-close-${interaction.user.id}-${adminRole?.id || 'null'}-${logChannelId}`) // logChannelIdも含めておく
+          .setCustomId(`ticket-close-${interaction.user.id}-${adminRole?.id || 'null'}-${logChannelId}`)
           .setLabel('チケット削除')
           .setStyle(ButtonStyle.Danger);
 
@@ -110,9 +109,8 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
-        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
-          console.log('Sending log to:', logChannel.id); // ログチャンネルIDを確認
+          console.log('Sending log to:', logChannel.id); 
           const logEmbed = new EmbedBuilder()
             .setTitle('🎫 チケット作成')
             .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。`)
