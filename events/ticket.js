@@ -99,6 +99,7 @@ module.exports = {
 
         // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
+          console.log('Sending log to:', logChannel.id); // ログチャンネルIDを確認
           const logEmbed = new EmbedBuilder()
             .setTitle('🎫 チケット作成')
             .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。`)
@@ -106,6 +107,8 @@ module.exports = {
             .setTimestamp();
 
           await logChannel.send({ embeds: [logEmbed] });
+        } else {
+          console.warn('Log channel is not valid or not a text channel.');
         }
 
       } catch (err) {
@@ -143,6 +146,7 @@ module.exports = {
         // ログ送信（チケット削除時）
         const logChannel = interaction.guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
         if (logChannel?.isTextBased()) {
+          console.log('Sending close log to:', logChannel.id); // ログチャンネルIDを確認
           const closeLog = new EmbedBuilder()
             .setTitle('❌ チケット削除')
             .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。`)
@@ -150,6 +154,8 @@ module.exports = {
             .setTimestamp();
 
           await logChannel.send({ embeds: [closeLog] });
+        } else {
+          console.warn('Log channel is not valid or not a text channel.');
         }
 
         setTimeout(async () => {
