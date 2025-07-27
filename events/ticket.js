@@ -11,18 +11,12 @@ const {
 const activeTicketUsers = new Set();
 const activeTicketChannels = new Set();
 const deletedChannels = new Set();
-const logChannelId = '1396441885442310186'; // ログ送信先チャンネルID
-const logEnabledGuildId = '1396396963292905523'; // ログを出す対象サーバーID
 
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
     // 🎫 チケット作成ボタン
-    if (
-      interaction.isButton() &&
-      interaction.customId.startsWith('ticket-') &&
-      !interaction.customId.startsWith('ticket-close-')
-    ) {
+    if (interaction.isButton() && interaction.customId.startsWith('ticket-') && !interaction.customId.startsWith('ticket-close-')) {
       const userId = interaction.user.id;
       if (activeTicketUsers.has(userId)) return;
       activeTicketUsers.add(userId);
@@ -45,17 +39,13 @@ module.exports = {
           await interaction.deferUpdate().catch(() => {});
         }
 
-        const [, , categoryId, roleId, userIdMeta, adminRoleId] =
-          interaction.customId.split('-');
-
+        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] = interaction.customId.split('-');
         const guild = interaction.guild;
-        const category =
-          guild.channels.cache.get(categoryId) ||
-          guild.channels.cache.find(c => c.type === ChannelType.GuildCategory);
+        const category = guild.channels.cache.get(categoryId) || guild.channels.cache.find(c => c.type === ChannelType.GuildCategory);
         const role = guild.roles.cache.get(roleId);
         const user = guild.members.cache.get(userIdMeta);
         const adminRole = guild.roles.cache.get(adminRoleId);
-        const everyone = guild.roles.everyone;
+        const logChannel = guild.channels.cache.get(logChannelId); // ログチャンネルを取得
 
         const displayName = interaction.member.displayName.replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥()（）ー・\-\_\s]/g, '');
         const channelName = `🎫｜${displayName}（${interaction.user.username}）`.slice(0, 100);
@@ -66,7 +56,7 @@ module.exports = {
           parent: category?.id,
           permissionOverwrites: [
             {
-              id: everyone.id,
+              id: guild.roles.everyone.id,
               deny: [PermissionFlagsBits.ViewChannel]
             },
             {
@@ -107,18 +97,15 @@ module.exports = {
 
         await channel.send({ content: mentions, embeds: [embed], components: [row] });
 
-        // ✅ ログチャンネルに作成通知（特定のサーバーのみ）
-        if (interaction.guild.id === logEnabledGuildId) {
-          const logChannel = client.channels.cache.get(logChannelId);
-          if (logChannel?.isTextBased()) {
-            const openLog = new EmbedBuilder()
-              .setTitle('🎫 チケット作成')
-              .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。\n📅 ${timestampString()}`)
-              .setColor(0x00bfff)
-              .setTimestamp();
+        // ログチャンネルに通知（指定されたチャンネル）
+        if (logChannel?.isTextBased()) {
+          const logEmbed = new EmbedBuilder()
+            .setTitle('🎫 チケット作成')
+            .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。`)
+            .setColor(0x00bfff)
+            .setTimestamp();
 
-            await logChannel.send({ embeds: [openLog] });
-          }
+          await logChannel.send({ embeds: [logEmbed] });
         }
 
       } catch (err) {
@@ -153,18 +140,16 @@ module.exports = {
 
         await interaction.channel.send({ embeds: [notifyEmbed] });
 
-        // ❌ ログ送信（特定サーバーのみ）
-        if (interaction.guild.id === logEnabledGuildId) {
-          const logChannel = client.channels.cache.get(logChannelId);
-          if (logChannel?.isTextBased()) {
-            const closeLog = new EmbedBuilder()
-              .setTitle('❌ チケット削除')
-              .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。\n📅 ${timestampString()}`)
-              .setColor(0xff5555)
-              .setTimestamp();
+        // ログ送信（チケット削除時）
+        const logChannel = interaction.guild.channels.cache.get(logChannelId); // ログチャンネルを取得
+        if (logChannel?.isTextBased()) {
+          const closeLog = new EmbedBuilder()
+            .setTitle('❌ チケット削除')
+            .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。`)
+            .setColor(0xff5555)
+            .setTimestamp();
 
-            await logChannel.send({ embeds: [closeLog] });
-          }
+          await logChannel.send({ embeds: [closeLog] });
         }
 
         setTimeout(async () => {
@@ -183,11 +168,3 @@ module.exports = {
     }
   }
 };
-
-// 📅 タイムスタンプ整形関数
-function timestampString(date = new Date()) {
-  return `${date.getFullYear()}\u5e74${pad(date.getMonth() + 1)}\u6708${pad(date.getDate())}\u65e5 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-function pad(n) {
-  return n.toString().padStart(2, '0');
-}
