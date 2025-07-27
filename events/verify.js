@@ -3,99 +3,178 @@ const { Events, EmbedBuilder, Colors } = require('discord.js');
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
-    // スラッシュコマンド処理
-    if (interaction.isChatInputCommand()) {
-      const command = client.commands.get(interaction.commandName);
-      if (!command) return;
+    // 🎫 チケット作成ボタン
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith('ticket-') &&
+      !interaction.customId.startsWith('ticket-close-')
+    ) {
+      const userId = interaction.user.id;
+      if (activeTicketUsers.has(userId)) return;
+      activeTicketUsers.add(userId);
+
+      const existing = interaction.guild.channels.cache.find(c =>
+        c.name.includes(`（${interaction.user.username}）`) &&
+        c.name.startsWith('🎫｜')
+      );
+      if (existing) {
+        await interaction.reply({
+          content: '⚠️ 既にあなたのチケットが存在します：<#' + existing.id + '>',
+          ephemeral: true
+        });
+        activeTicketUsers.delete(userId);
+        return;
+      }
 
       try {
-        await command.execute(interaction, client);
-      } catch (err) {
-        console.error(`❌ コマンド実行中エラー: ${interaction.commandName}`);
-        console.error(err);
-
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({
-            content: "⚠️ コマンド実行中にエラーが発生しました。",
-            ephemeral: true,
-          });
-        } else {
-          await interaction.followUp({
-            content: "⚠️ コマンド実行中にエラーが発生しました。",
-            ephemeral: true,
-          });
-        }
-      }
-    }
-
-    // ボタン処理（例: verify-ロールID-ログチャンネルID）
-    if (interaction.isButton()) {
-      const [prefix, roleId, logChannelId] = interaction.customId.split("-");
-
-      if (prefix !== "verify") return;
-
-      const role = interaction.guild.roles.cache.get(roleId);
-      if (!role) {
-        return interaction.reply({
-          content: "❌ ロールが見つかりませんでした。",
-          ephemeral: true,
-        });
-      }
-
-      // すでにロールを持っていないかチェック
-      if (interaction.member.roles.cache.has(role.id)) {
-        return interaction.reply({
-          content: "✅ すでに認証済みです。",
-          ephemeral: true,
-        });
-      }
-
-      // インタラクションを遅延応答
-      try {
+        // すでに応答があったかどうかを確認
         await interaction.deferUpdate();
 
-        // ロール付与処理
-        await interaction.member.roles.add(role);
+        // customIdを分割
+        const [, , categoryId, roleId, userIdMeta, adminRoleId, logChannelId] =
+          interaction.customId.split('-');
 
-        const embed = new EmbedBuilder()
-          .setTitle("✅ 認証完了")
-          .setDescription(`\`${role.name}\` を付与しました！`)
-          .setColor(Colors.Green)
-          .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-          .setTimestamp()
-          .setFooter({
-            text: `${interaction.user.username} さん`,
-            iconURL: interaction.user.displayAvatarURL({ dynamic: true }),
-          });
+        console.log('Custom ID:', interaction.customId); // customId全体を表示
+        console.log('Log Channel ID:', logChannelId); // logChannelIdを表示
 
-        await interaction.followUp({
-          embeds: [embed],
-          ephemeral: true,
+        if (!logChannelId || logChannelId === 'null') {
+          console.warn('Log Channel ID is invalid or not provided.');
+          return;
+        }
+
+        const guild = interaction.guild;
+        const category =
+          guild.channels.cache.get(categoryId) ||
+          guild.channels.cache.find(c => c.type === ChannelType.GuildCategory);
+        const role = guild.roles.cache.get(roleId);
+        const user = guild.members.cache.get(userIdMeta);
+        const adminRole = guild.roles.cache.get(adminRoleId);
+        const logChannel = guild.channels.cache.get(logChannelId); // logChannelIdを使ってログチャンネルを取得
+
+        if (!logChannel) {
+          console.warn('Log channel could not be found or is invalid.');
+          return;
+        }
+
+        const displayName = interaction.member.displayName.replace(/[^a-zA-Z0-9ぁ-んァ-ン一-龥()（）ー・\-\_\s]/g, '');
+        const channelName = `🎫｜${displayName}（${interaction.user.username}）`.slice(0, 100);
+
+        const channel = await guild.channels.create({
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: category?.id,
+          permissionOverwrites: [
+            {
+              id: guild.roles.everyone.id,
+              deny: [PermissionFlagsBits.ViewChannel]
+            },
+            {
+              id: interaction.user.id,
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+            },
+            ...(adminRole ? [{
+              id: adminRole.id,
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageChannels]
+            }] : []),
+            ...guild.members.cache
+              .filter(m => m.permissions.has(PermissionFlagsBits.Administrator))
+              .map(m => ({
+                id: m.id,
+                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+              }))
+          ]
         });
 
-        // ログチャンネルに認証成功の通知を送信
-        const logChannel = interaction.guild.channels.cache.get(logChannelId); // ログチャンネルIDを使用
+        const mentions = [
+          `<@${interaction.user.id}>`,
+          role ? `<@&${role.id}>` : null,
+          user ? `<@${user.id}>` : null
+        ].filter(Boolean).join(' ');
+
+        const embed = new EmbedBuilder()
+          .setTitle('📉 お問い合わせ')
+          .setDescription('お問い合わせありがとうございます。\n内容を送信後、管理者をお待ちください。')
+          .setColor(Colors.Green)
+          .setTimestamp();
+
+        const deleteButton = new ButtonBuilder()
+          .setCustomId(`ticket-close-${interaction.user.id}-${adminRole?.id || 'null'}-${logChannelId}`)
+          .setLabel('チケット削除')
+          .setStyle(ButtonStyle.Danger);
+
+        const row = new ActionRowBuilder().addComponents(deleteButton);
+
+        await channel.send({ content: mentions, embeds: [embed], components: [row] });
+
+        // ログ送信（ログチャンネルが指定されていれば）
         if (logChannel?.isTextBased()) {
           const logEmbed = new EmbedBuilder()
-            .setTitle('🎫 認証完了')
-            .setDescription(`👤 <@${interaction.user.id}> が \`${role.name}\` を認証しました。`)
-            .setColor(Colors.Green)
+            .setTitle('🎫 チケット作成')
+            .setDescription(`👤 <@${interaction.user.id}> が \`${channel.name}\` を作成しました。`)
+            .setColor(Colors.Blue)
             .setTimestamp();
 
           await logChannel.send({ embeds: [logEmbed] });
+        } else {
+          console.warn('Log channel is not valid or not a text channel.');
         }
 
       } catch (err) {
-        console.error("❌ ロール付与失敗:", err);
+        console.error('❌ チケット作成エラー:', err);
+      } finally {
+        activeTicketUsers.delete(userId);
+      }
+    }
 
-        try {
-          await interaction.followUp({
-            content: "❌ ロールを付与できませんでした。",
-            ephemeral: true,
-          });
-        } catch {
-          console.warn("⚠️ 二重応答防止：すでに応答済み");
+    // 🗑 チケット削除ボタン
+    if (interaction.isButton() && interaction.customId.startsWith('ticket-close-')) {
+      const channelId = interaction.channelId;
+      if (activeTicketChannels.has(channelId) || deletedChannels.has(channelId)) return;
+      activeTicketChannels.add(channelId);
+
+      try {
+        // すでに応答があったかどうかを確認
+        await interaction.deferUpdate();
+
+        const [, , ticketOwnerId, adminRoleId, logChannelId] = interaction.customId.split('-');
+        const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+        const hasAdminRole = adminRoleId !== 'null' && interaction.member.roles.cache.has(adminRoleId);
+
+        if (!(isAdmin || hasAdminRole)) return;
+
+        const notifyEmbed = new EmbedBuilder()
+          .setTitle('🗑 チャンネル削除')
+          .setDescription('このチャンネルは `1秒後` に削除されます。')
+          .setColor(Colors.Yellow)
+          .setTimestamp();
+
+        await interaction.channel.send({ embeds: [notifyEmbed] });
+
+        const logChannel = interaction.guild.channels.cache.get(logChannelId);
+        if (logChannel?.isTextBased()) {
+          const closeLog = new EmbedBuilder()
+            .setTitle('❌ チケット削除')
+            .setDescription(`👮 <@${interaction.user.id}> が \`${interaction.channel.name}\` を削除しました。`)
+            .setColor(Colors.Red)
+            .setTimestamp();
+
+          await logChannel.send({ embeds: [closeLog] });
+        } else {
+          console.warn('Log channel is not valid or not a text channel.');
         }
+
+        setTimeout(async () => {
+          if (!deletedChannels.has(channelId)) {
+            deletedChannels.add(channelId);
+            await interaction.channel?.delete().catch(err => {
+              console.error('❌ チャンネル削除失敗:', err.message);
+            });
+          }
+        }, 1000);
+      } catch (err) {
+        console.error('❌ チケット削除エラー:', err);
+      } finally {
+        activeTicketChannels.delete(channelId);
       }
     }
   }
