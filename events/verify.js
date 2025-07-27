@@ -1,4 +1,4 @@
-const { Events, EmbedBuilder, Colors } = require("discord.js");
+const { Events, EmbedBuilder, Colors } = require('discord.js');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -50,6 +50,7 @@ module.exports = {
         });
       }
 
+      // ロール付与処理
       try {
         await interaction.member.roles.add(role);
 
@@ -68,6 +69,19 @@ module.exports = {
           embeds: [embed],
           ephemeral: true,
         });
+
+        // ログチャンネルに認証成功の通知を送信
+        const logChannel = interaction.options.getChannel('logchannel'); // 取得したログチャンネルを使用
+        if (logChannel?.isTextBased()) {
+          const logEmbed = new EmbedBuilder()
+            .setTitle('🎫 認証完了')
+            .setDescription(`👤 <@${interaction.user.id}> が \`${role.name}\` を認証しました。`)
+            .setColor(Colors.Green)
+            .setTimestamp();
+
+          await logChannel.send({ embeds: [logEmbed] });
+        }
+
       } catch (err) {
         console.error("❌ ロール付与失敗:", err);
 
