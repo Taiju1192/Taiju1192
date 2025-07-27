@@ -74,7 +74,7 @@ module.exports = {
     }
 
     const button = new ButtonBuilder()
-      .setCustomId(`verify-${role.id}`)
+      .setCustomId(`verify-${role.id}-${logChannel?.id}`) // ログチャンネルIDを含める
       .setLabel(buttonLabel)
       .setStyle(ButtonStyle.Success);
 
