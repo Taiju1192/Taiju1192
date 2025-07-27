@@ -74,7 +74,13 @@ module.exports = {
     }
 
     // customIdの長さを制限するために、必要最低限の情報だけを使う
-    const customId = `ticket-${category?.id?.slice(0, 6)}-${role?.id?.slice(0, 6)}-${adminRole?.id?.slice(0, 6)}-${logChannel?.id?.slice(0, 6)}`;
+    const customId = `ticket-${category?.id?.slice(0, 6) || 'null'}-${role?.id?.slice(0, 6) || 'null'}-${adminRole?.id?.slice(0, 6) || 'null'}-${logChannel?.id?.slice(0, 6) || 'null'}`;
+
+    // customIdが100文字を超える場合、切り捨てる
+    const maxLength = 100;
+    if (customId.length > maxLength) {
+      customId = customId.slice(0, maxLength);
+    }
 
     const ticketButton = new ButtonBuilder()
       .setCustomId(customId) // 短縮された customId をセット
