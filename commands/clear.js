@@ -27,13 +27,13 @@ module.exports = {
       // 応答を遅延させ、後でメッセージを削除する
       await interaction.deferReply();
 
-      // メッセージ削除
+      // メッセージ削除（全てのメッセージを取得）
       const messages = await interaction.channel.messages.fetch({ limit: count });
 
-      // BOTのメッセージを除外
+      // BOTのメッセージを除外し、実際に削除するメッセージを作成
       const filteredMessages = messages.filter(msg => !msg.author.bot);
 
-      // メッセージが削除できるか確認
+      // もしBOTのメッセージが全てであった場合、削除できるメッセージがない
       if (filteredMessages.size === 0) {
         return await interaction.followUp({
           content: "⚠ 削除するメッセージがありません（BOTのメッセージは削除しません）。",
@@ -41,7 +41,7 @@ module.exports = {
         });
       }
 
-      // メッセージを一括削除
+      // 指定された数だけ削除（もしBOTのメッセージがある場合）
       const deleted = await interaction.channel.bulkDelete(filteredMessages, true);
 
       // 削除成功のログ用Embedを作成
