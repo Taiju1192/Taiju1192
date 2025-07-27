@@ -32,10 +32,21 @@ module.exports = {
       // メッセージ削除（指定された数のメッセージを取得）
       const messages = await interaction.channel.messages.fetch({ limit: count });
 
-      // メッセージを一括削除
-      const deletedMessages = await interaction.channel.bulkDelete(messages, true);
+      // 削除対象のメッセージをフィルタリング
+      const filteredMessages = messages.filter(msg => !msg.author.bot); // BOTメッセージを除外
 
-      // 削除したメッセージ数をログ用Embedに追加
+      // メッセージが削除できるか確認
+      if (filteredMessages.size === 0) {
+        return await interaction.followUp({
+          content: "⚠ 削除するメッセージがありません（BOTのメッセージは削除しません）。",
+          ephemeral: true
+        });
+      }
+
+      // メッセージを一括削除
+      const deletedMessages = await interaction.channel.bulkDelete(filteredMessages, true);
+
+      // 削除成功のログ用Embedを作成
       const successEmbed = new EmbedBuilder()
         .setTitle("✅ メッセージ削除完了")
         .setDescription(`${deletedMessages.size} 件のメッセージを削除しました。`)
@@ -46,8 +57,8 @@ module.exports = {
           iconURL: interaction.user.displayAvatarURL({ dynamic: true })
         });
 
-      // 成功メッセージを削除後に送信
-      await interaction.followUp({
+      // 成功のログを削除後に送信
+      return await interaction.followUp({
         embeds: [successEmbed],
         ephemeral: true
       });
