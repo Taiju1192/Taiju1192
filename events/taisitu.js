@@ -1,27 +1,32 @@
-const { Events, EmbedBuilder } = require("discord.js");
+const { Events, AttachmentBuilder } = require('discord.js');
+const createWelcomeImage = require('../utils/createWelcomeImage');
 
 let lastLeaveId = null;
+const TARGET_GUILD_ID = '1396396963292905523';
+const TARGET_CHANNEL_ID = '1396402907053817866';
 
 module.exports = {
   name: Events.GuildMemberRemove,
-  async execute(member, client) {
-    console.log("[DEBUG] イベント発火: guildMemberRemove from taisitu.js");
-
-    // 同じユーザーの重複イベント防止
+  async execute(member) {
+    if (member.guild.id !== TARGET_GUILD_ID) return;
     if (member.id === lastLeaveId) return;
     lastLeaveId = member.id;
 
-    const logChannelId = "1396402907053817866";
-    const logChannel = member.guild.channels.cache.get(logChannelId);
+    const logChannel = member.guild.channels.cache.get(TARGET_CHANNEL_ID);
     if (!logChannel) return;
 
-    const embed = new EmbedBuilder()
-      .setColor(0xed4245) // 赤
-      .setAuthor({ name: member.user.tag, iconURL: member.user.displayAvatarURL() })
-      .setDescription(`<@${member.id}> が退出しました。`)
-      .setTimestamp();
+    const buffer = await createWelcomeImage(
+      member.user.username,
+      member.user.displayAvatarURL({ size: 256, extension: 'png' }),
+      'leave'
+    );
+    const attachment = new AttachmentBuilder(buffer, { name: 'farewell.png' });
 
-    await logChannel.send({ embeds: [embed] });
-    console.log("[LEAVE]", member.user.username);
+    await logChannel.send({
+      content: `👋 <@${member.id}> が退出しました。`,
+      files: [attachment]
+    });
+
+    console.log('[LEAVE]', member.user.username);
   }
 };
