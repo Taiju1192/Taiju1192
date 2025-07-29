@@ -17,8 +17,9 @@
 "mathjs": "^11.11.0",
 "multer": "^2.0.1",
 "node-fetch": "^2.6.9",
-"opusscript": "^0.0.8""@napi-rs/canvas": "^0.1.44",
-"axios": "^1.6.7"
+"opusscript": "^0.0.8",
+"axios": "^1.6.7",
+"@napi-rs/canvas": "^0.1.44"
 },
 "engines": {
 "node": "20.x"
