@@ -15,18 +15,24 @@ module.exports = {
     const logChannel = member.guild.channels.cache.get(TARGET_CHANNEL_ID);
     if (!logChannel) return;
 
-    const buffer = await createWelcomeImage(
-      member.user.username,
-      member.user.displayAvatarURL({ size: 256, extension: 'png' }),
-      'join'
-    );
-    const attachment = new AttachmentBuilder(buffer, { name: 'welcome.png' });
+    try {
+      const buffer = await createWelcomeImage(
+        member.user.username,
+        member.user.id,
+        member.user.displayAvatarURL({ extension: 'png', size: 256 }),
+        'join'
+      );
 
-    await logChannel.send({
-      content: `🎉 <@${member.id}> が入室しました！`,
-      files: [attachment]
-    });
+      const attachment = new AttachmentBuilder(buffer, { name: 'welcome.png' });
 
-    console.log('[JOIN]', member.user.username);
+      await logChannel.send({
+        content: `🎉 <@${member.id}> がサーバーに参加しました！`,
+        files: [attachment]
+      });
+
+      console.log('[JOIN]', member.user.username);
+    } catch (err) {
+      console.error('入室画像生成または送信失敗:', err);
+    }
   }
 };
