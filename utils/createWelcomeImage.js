@@ -9,7 +9,7 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // 背景画像読み込み（リポジトリ内の assets ディレクトリから）
+  // 🔁 背景画像を assets フォルダから読み込み
   const bgPath = path.join(
     __dirname,
     '../assets',
@@ -21,17 +21,17 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
     ctx.drawImage(bgImage, 0, 0, width, height);
   } catch (err) {
     console.error('背景画像読み込み失敗:', err);
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#ccc';
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 👤 アバター描画（背景の丸の中央に合わせる）
+  // 👤 アバター描画
   try {
     const resp = await axios.get(avatarURL, { responseType: 'arraybuffer' });
     const avatar = await loadImage(resp.data);
-    const size = 300;
-    const centerX = 285; // 背景の丸の中心X
-    const centerY = 380; // 背景の丸の中心Y
+    const size = 280;
+    const centerX = 340;
+    const centerY = 384;
 
     ctx.save();
     ctx.beginPath();
@@ -42,14 +42,6 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
   } catch (err) {
     console.error('アバター描画失敗:', err);
   }
-
-  // 🆔 ユーザー名とID（アイコンの下に薄く表示）
-  ctx.fillStyle = type === 'join' ? '#ffffff' : '#222222';
-  ctx.font = 'bold 30px Sans';
-  ctx.fillText(username, 110, 610); // 左下の文字（名前）
-
-  ctx.font = '22px Sans';
-  ctx.fillText(`ID: ${userId}`, 110, 650); // 左下の文字（ID）
 
   return canvas.toBuffer('image/png');
 };
