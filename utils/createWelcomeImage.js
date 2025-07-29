@@ -9,7 +9,7 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // 🔁 背景画像を assets フォルダから読み込み
+  // 背景画像を assets フォルダから読み込み
   const bgPath = path.join(
     __dirname,
     '../assets',
@@ -25,7 +25,7 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 👤 アバター描画
+  // アバター描画
   try {
     const resp = await axios.get(avatarURL, { responseType: 'arraybuffer' });
     const avatar = await loadImage(resp.data);
@@ -42,6 +42,12 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
   } catch (err) {
     console.error('アバター描画失敗:', err);
   }
+
+  // ID を右下に黒色で表示
+  ctx.fillStyle = '#000000';
+  ctx.font = '22px Sans';
+  ctx.textAlign = 'right';
+  ctx.fillText(`ID: ${userId}`, width - 60, height - 60); // → X:1305, Y:708
 
   return canvas.toBuffer('image/png');
 };
