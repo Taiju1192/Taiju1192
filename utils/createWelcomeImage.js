@@ -9,9 +9,10 @@ module.exports = async function createWelcomeImage(username, userId, avatarURL, 
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // 背景画像読み込み（/mnt/data に保存された画像）
+  // 背景画像読み込み（リポジトリ内の assets ディレクトリから）
   const bgPath = path.join(
-    '/mnt/data',
+    __dirname,
+    '../assets',
     type === 'join' ? 'welcome.png' : 'takecare.png'
   );
 
