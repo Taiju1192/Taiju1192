@@ -15,18 +15,24 @@ module.exports = {
     const logChannel = member.guild.channels.cache.get(TARGET_CHANNEL_ID);
     if (!logChannel) return;
 
-    const buffer = await createWelcomeImage(
-      member.user.username,
-      member.user.displayAvatarURL({ size: 256, extension: 'png' }),
-      'leave'
-    );
-    const attachment = new AttachmentBuilder(buffer, { name: 'farewell.png' });
+    try {
+      const buffer = await createWelcomeImage(
+        member.user.username,
+        member.user.id,
+        member.user.displayAvatarURL({ extension: 'png', size: 256 }),
+        'leave'
+      );
 
-    await logChannel.send({
-      content: `👋 <@${member.id}> が退出しました。`,
-      files: [attachment]
-    });
+      const attachment = new AttachmentBuilder(buffer, { name: 'takecare.png' });
 
-    console.log('[LEAVE]', member.user.username);
+      await logChannel.send({
+        content: `👋 <@${member.id}> がサーバーから退出しました。`,
+        files: [attachment]
+      });
+
+      console.log('[LEAVE]', member.user.username);
+    } catch (err) {
+      console.error('退出画像生成または送信失敗:', err);
+    }
   }
 };
