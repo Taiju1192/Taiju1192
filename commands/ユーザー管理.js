@@ -21,31 +21,37 @@ const TIMEOUT_DURATIONS = {
 };
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('ユーザー管理')
-    .setDescription('ユーザーを管理します（ban, unban, kick, timeout, untimeout）')
-    .addUserOption(opt =>
-      opt.setName('ユーザー').setDescription('対象のユーザー').setRequired(false)
-    )
-    .addStringOption(opt =>
-      opt.setName('ユーザーid').setDescription('IDで指定（参加していなくても可）')
-    )
-    .addStringOption(opt =>
-      opt.setName('アクション')
-        .setDescription('実行する操作')
-        .setRequired(true)
-        .addChoices(
-          { name: 'ban', value: 'ban' },
-          { name: 'unban', value: 'unban' },
-          { name: 'kick', value: 'kick' },
-          { name: 'timeout', value: 'timeout' },
-          { name: 'untimeout', value: 'untimeout' }
-        )
-    )
-    .addStringOption(opt =>
-      opt.setName('理由').setDescription('操作の理由（任意）')
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+data: new SlashCommandBuilder()
+  .setName('ユーザー管理')
+  .setDescription('ユーザーを管理します（ban, unban, kick, timeout, untimeout）')
+  .addStringOption(opt =>
+    opt.setName('アクション')
+      .setDescription('実行する操作')
+      .setRequired(true)
+      .addChoices(
+        { name: 'ban', value: 'ban' },
+        { name: 'unban', value: 'unban' },
+        { name: 'kick', value: 'kick' },
+        { name: 'timeout', value: 'timeout' },
+        { name: 'untimeout', value: 'untimeout' }
+      )
+  )
+  .addUserOption(opt =>
+    opt.setName('ユーザー')
+      .setDescription('対象のユーザー')
+      .setRequired(false)
+  )
+  .addStringOption(opt =>
+    opt.setName('ユーザーid')
+      .setDescription('IDで指定（参加していなくても可）')
+      .setRequired(false)
+  )
+  .addStringOption(opt =>
+    opt.setName('理由')
+      .setDescription('操作の理由（任意）')
+      .setRequired(false)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
   async execute(interaction) {
     const member = interaction.options.getMember('ユーザー');
     const userId = interaction.options.getString('ユーザーid');
