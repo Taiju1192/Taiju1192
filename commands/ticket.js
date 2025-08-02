@@ -23,14 +23,14 @@ module.exports = {
       .setDescription('パネルの説明')
       .setRequired(false)
   )
-  .addAttachmentOption(opt =>
-    opt.setName('image')
-      .setDescription('埋め込み画像')
-      .setRequired(false)
-  )
   .addStringOption(opt =>
     opt.setName('button')
       .setDescription('ボタンのラベル')
+      .setRequired(false)
+  )
+  .addAttachmentOption(opt =>
+    opt.setName('image')
+      .setDescription('埋め込み画像')
       .setRequired(false)
   )
   .addChannelOption(opt =>
@@ -53,8 +53,7 @@ module.exports = {
     opt.setName('adminrole')
       .setDescription('チケットを削除できる管理ロール')
       .setRequired(false)
-  )
-
+  ),
 
   async execute(interaction) {
     // 実行者が管理者権限を持っているかチェック
