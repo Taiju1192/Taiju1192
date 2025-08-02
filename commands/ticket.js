@@ -10,42 +10,51 @@ const {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('ticket')
-    .setDescription('チケットパネルを送信します')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(opt =>
-      opt.setName('title')
-        .setDescription('パネルのタイトル')
-    )
-    .addStringOption(opt =>
-      opt.setName('description')
-        .setDescription('パネルの説明')
-    )
-    .addAttachmentOption(opt =>
-      opt.setName('image')
-        .setDescription('埋め込み画像')
-    )
-    .addStringOption(opt =>
-      opt.setName('button')
-        .setDescription('ボタンのラベル')
-    )
-    .addChannelOption(opt =>
-      opt.setName('category')
-        .setDescription('チケットを作成するカテゴリー')
-        .addChannelTypes(ChannelType.GuildCategory)
-    )
-    .addRoleOption(opt =>
-      opt.setName('role')
-        .setDescription('通知対象のロール（メンション）')
-    )
-    .addUserOption(opt =>
-      opt.setName('user')
-        .setDescription('通知対象のユーザー（メンション）')
-    )
-    .addRoleOption(opt =>
-      opt.setName('adminrole')
-        .setDescription('チケットを削除できる管理ロール')
-    ),
+  .setName('ticket')
+  .setDescription('チケットパネルを送信します')
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .addStringOption(opt =>
+    opt.setName('title')
+      .setDescription('パネルのタイトル')
+      .setRequired(false)
+  )
+  .addStringOption(opt =>
+    opt.setName('description')
+      .setDescription('パネルの説明')
+      .setRequired(false)
+  )
+  .addAttachmentOption(opt =>
+    opt.setName('image')
+      .setDescription('埋め込み画像')
+      .setRequired(false)
+  )
+  .addStringOption(opt =>
+    opt.setName('button')
+      .setDescription('ボタンのラベル')
+      .setRequired(false)
+  )
+  .addChannelOption(opt =>
+    opt.setName('category')
+      .setDescription('チケットを作成するカテゴリー')
+      .addChannelTypes(ChannelType.GuildCategory)
+      .setRequired(false)
+  )
+  .addRoleOption(opt =>
+    opt.setName('role')
+      .setDescription('通知対象のロール（メンション）')
+      .setRequired(false)
+  )
+  .addUserOption(opt =>
+    opt.setName('user')
+      .setDescription('通知対象のユーザー（メンション）')
+      .setRequired(false)
+  )
+  .addRoleOption(opt =>
+    opt.setName('adminrole')
+      .setDescription('チケットを削除できる管理ロール')
+      .setRequired(false)
+  )
+
 
   async execute(interaction) {
     // 実行者が管理者権限を持っているかチェック
