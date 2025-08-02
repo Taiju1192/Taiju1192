@@ -96,16 +96,13 @@ if (fs.existsSync(eventsPath)) {
 if (!process.env.DISCORD_TOKEN) {
   console.error("❌ DISCORD_TOKEN が設定されていません。");
 } else {
-  console.log("🔑 client.login() を呼び出します...");
   client.login(process.env.DISCORD_TOKEN)
     .then(() => console.log("🔐 Discord login success!"))
     .catch(err => {
-      console.error("❌ Discord login failed:");
-      console.error(err);
+      console.error("❌ Discord login failed:", err);
       process.exit(1);
     });
 }
-
 
 // ✅ スラッシュコマンド登録とアクティビティ設定
 client.once("ready", async () => {
@@ -148,5 +145,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🌐 Webサーバー起動中: http://localhost:${PORT}`);
 });
-
-
