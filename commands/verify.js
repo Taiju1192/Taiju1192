@@ -9,40 +9,48 @@ const {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('verify')
-    .setDescription('認証パネルを送信します')
-    .addRoleOption(option =>
-      option
-        .setName('role')
-        .setDescription('付与するロール')
-        .setRequired(true)
-    )
-    .addStringOption(option =>
-      option
-        .setName('title')
-        .setDescription('タイトル')
-    )
-    .addStringOption(option =>
-      option
-        .setName('description')
-        .setDescription('説明文')
-    )
-    .addStringOption(option =>
-      option
-        .setName('button')
-        .setDescription('ボタンのラベル')
-    )
-    .addAttachmentOption(option =>
-      option
-        .setName('image')
-        .setDescription('埋め込み画像')
-    )
-    .addChannelOption(option =>
-      option
-        .setName('logchannel')
-        .setDescription('認証成功のログを送信するチャンネル')
-        .addChannelTypes(0) // `0` はテキストチャンネル
-    ),
+  .setName('verify')
+  .setDescription('認証パネルを送信します')
+  // ✅ 必須オプションは先に
+  .addRoleOption(option =>
+    option
+      .setName('role')
+      .setDescription('付与するロール')
+      .setRequired(true)
+  )
+  // ✅ 以下、すべて非必須（順番は自由）
+  .addStringOption(option =>
+    option
+      .setName('title')
+      .setDescription('タイトル')
+      .setRequired(false)
+  )
+  .addStringOption(option =>
+    option
+      .setName('description')
+      .setDescription('説明文')
+      .setRequired(false)
+  )
+  .addStringOption(option =>
+    option
+      .setName('button')
+      .setDescription('ボタンのラベル')
+      .setRequired(false)
+  )
+  .addAttachmentOption(option =>
+    option
+      .setName('image')
+      .setDescription('埋め込み画像')
+      .setRequired(false)
+  )
+  .addChannelOption(option =>
+    option
+      .setName('logchannel')
+      .setDescription('認証成功のログを送信するチャンネル')
+      .addChannelTypes(0)
+      .setRequired(false)
+  ),
+
 
   async execute(interaction) {
     // 管理者チェック
