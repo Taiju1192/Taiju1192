@@ -13,6 +13,7 @@ require("dotenv").config();
 
 console.log("🚀 起動開始");
 console.log("DISCORD_TOKEN:", !!process.env.DISCORD_TOKEN);
+console.log("DISCORD_TOKEN先頭:", process.env.DISCORD_TOKEN?.slice(0, 10)); // デバッグ用
 console.log("CLIENT_ID:", process.env.CLIENT_ID || "❌ 未設定");
 console.log("GUILD_ID:", process.env.GUILD_ID || "❌ 未設定");
 
@@ -31,6 +32,10 @@ const client = new Client({
     Partials.Reaction,
     Partials.User
   ]
+});
+
+client.on("error", (err) => {
+  console.error("💥 Discord client error:", err);
 });
 
 // ✅ activePlayers 読み込み（存在しない場合はスキップ）
@@ -92,19 +97,18 @@ if (fs.existsSync(eventsPath)) {
   }
 }
 
-// ✅ Discord ログイン
-if (!process.env.DISCORD_TOKEN) {
-  console.error("❌ DISCORD_TOKEN が設定されていません。");
-} else {
-  console.log("🟡 client.login() を呼び出します...");
-  client.login(process.env.DISCORD_TOKEN)
-    .then(() => console.log("🟢 Discord login success!"))
-    .catch(err => {
-      console.error("🔴 Discord login failed:");
-      console.error(err);
-      process.exit(1);
-    });
-}
+// ✅ Discord ログイン（async/await で明確なエラー出力）
+(async () => {
+  try {
+    console.log("🟡 client.login() を呼び出します...");
+    await client.login(process.env.DISCORD_TOKEN);
+    console.log("🟢 Discord login success!");
+  } catch (err) {
+    console.error("🔴 Discord login failed:");
+    console.error(err);
+    process.exit(1);
+  }
+})();
 
 // ✅ スラッシュコマンド登録とアクティビティ設定
 client.once("ready", async () => {
@@ -112,12 +116,10 @@ client.once("ready", async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
   try {
-    // ✅ コマンド登録先（グローバル or ギルド限定）
     const route = process.env.GUILD_ID
       ? Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID)
       : Routes.applicationCommands(process.env.CLIENT_ID);
 
-    // ✅ コマンド上書き登録
     await rest.put(route, { body: commands });
     console.log(process.env.GUILD_ID
       ? "🏠 ギルドコマンドを登録しました"
@@ -126,7 +128,6 @@ client.once("ready", async () => {
     console.error("❌ スラッシュコマンド登録エラー:", error);
   }
 
-  // ✅ アクティビティ設定（任意）
   try {
     require("./activity")(client);
   } catch {
